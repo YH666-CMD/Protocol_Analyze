@@ -1,18 +1,27 @@
-# ========== MRS工程编译产物（适配你 软件/ 目录结构） ==========
-软件/Debug/
-软件/obj/
-软件/**/*.o
-软件/**/*.d
-软件/**/*.su
-软件/**/*.elf
-软件/**/*.bin
-软件/**/*.hex
-软件/**/*.map
-软件/**/*.lst
-软件/makefile
-软件/**/subdir.mk
-软件/**/*.mk
-软件/.settings/
+# ========== 纯编译中间产物（核心忽略） ==========
+# obj 目录下所有 .o .d .su 目标文件和子目录mk
+软件/obj/**/*.o
+软件/obj/**/*.d
+软件/obj/**/*.su
+软件/obj/**/*.mk
+
+# 固件输出文件
+软件/obj/*.elf
+软件/obj/*.hex
+软件/obj/*.bin
+软件/obj/*.map
+软件/obj/*.lst
+软件/obj/makefile
+软件/obj/objects.mk
+软件/obj/sources.mk
+
+# ========== IDE 临时配置（可选，想保留工程配置就注释掉） ==========
+# 软件/.settings/
+# 软件/.cproject
+# 软件/.project
+# 软件/*.launch
+# 软件/*.wvproj
+# 软件/.template
 
 # ========== 通用临时文件 ==========
 *.log

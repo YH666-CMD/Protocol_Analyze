@@ -3,5 +3,7 @@ encoding//User/main.c=UTF-8
 encoding//fw_app/00_System/System/config.h=UTF-8
 encoding//fw_app/04_Components/CRC/crc.c=UTF-8
 encoding//fw_app/04_Components/CRC/crc.h=UTF-8
+encoding//fw_app/04_Components/pingpong_buf/pingpong_buf.c=UTF-8
+encoding//fw_app/04_Components/pingpong_buf/pingpong_buf.h=UTF-8
 encoding//fw_app/04_Components/ring_buffer/ring_buffer.c=UTF-8
 encoding//fw_app/04_Components/ring_buffer/ring_buffer.h=UTF-8
