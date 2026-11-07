@@ -1,6 +1,8 @@
 eclipse.preferences.version=1
 encoding//User/main.c=UTF-8
 encoding//fw_app/00_System/System/config.h=UTF-8
+encoding//fw_app/02_BSP/board/bsp_board.c=UTF-8
+encoding//fw_app/02_BSP/time/bsp_time.c=UTF-8
 encoding//fw_app/04_Components/CRC/crc.c=UTF-8
 encoding//fw_app/04_Components/CRC/crc.h=UTF-8
 encoding//fw_app/04_Components/aes/aes.c=UTF-8
@@ -9,3 +11,5 @@ encoding//fw_app/04_Components/pingpong_buf/pingpong_buf.c=UTF-8
 encoding//fw_app/04_Components/pingpong_buf/pingpong_buf.h=UTF-8
 encoding//fw_app/04_Components/ring_buffer/ring_buffer.c=UTF-8
 encoding//fw_app/04_Components/ring_buffer/ring_buffer.h=UTF-8
+encoding//fw_app/05_Scheduler/sched/sched.c=UTF-8
+encoding//fw_app/06_App/heartbeat/app_heartbeat.h=UTF-8
