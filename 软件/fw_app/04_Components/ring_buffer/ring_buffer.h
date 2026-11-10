@@ -17,7 +17,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/* 容量必须是 2 的幂，这样下标回绕可以用按位与 */
+/*
+ * 容量必须是 2 的幂，这样下标回绕可以用按位与。
+ * 接收是逐字节进环，任务每 5ms 搬走。256 在 115200 下大约能攒 22ms。
+ */
 #define RB_SIZE   256
 
 #if (RB_SIZE < 2) || (RB_SIZE > 65536) || ((RB_SIZE & (RB_SIZE - 1)) != 0)

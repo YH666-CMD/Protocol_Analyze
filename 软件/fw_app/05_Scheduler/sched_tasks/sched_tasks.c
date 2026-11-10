@@ -2,9 +2,10 @@
 #include "config.h"
 #include "log.h"
 #include "app_heartbeat.h"
+#include "app_uart_monitor.h"
 #include <stddef.h>
 
-#if (SCHED_ID_LOG != 0u) || (SCHED_ID_HEARTBEAT != 1u)
+#if (SCHED_ID_LOG != 0u) || (SCHED_ID_HEARTBEAT != 1u) || (SCHED_ID_UART != 2u)
 #error "task id macros must match the table order below"
 #endif
 
@@ -66,6 +67,13 @@ static const sched_task_t s_tasks[] =
         .phase_ms   = SCHED_PHASE_HEARTBEAT_MS,
         .pf_init    = app_heartbeat_init,
         .pf_on_tick = app_heartbeat_on_tick,
+    },
+    {
+        .name       = "uart",
+        .period_ms  = SCHED_PERIOD_UART_MS,
+        .phase_ms   = SCHED_PHASE_UART_MS,
+        .pf_init    = app_uart_monitor_init,
+        .pf_on_tick = app_uart_monitor_on_tick,
     },
 };
 

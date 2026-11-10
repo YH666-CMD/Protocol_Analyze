@@ -15,15 +15,25 @@
 #define SCHED_TASK_MAX                8u        /* 任务表容量 */
 #define SCHED_TIME_MEASURE_ENABLE     1u        /* 1：记录每个任务本次耗时，并在超过周期时报错 */
 
-#define SCHED_ID_LOG                  0u        /* 日志任务*/ 
-#define SCHED_ID_HEARTBEAT            1u        /* 心跳任务*/
+#define SCHED_ID_LOG                  0u        /* 日志任务 */
+#define SCHED_ID_HEARTBEAT            1u        /* 心跳任务 */
+#define SCHED_ID_UART                 2u        /* 串口接收的测试消费者。后期换成 USB 时，这个任务不再读环 */
 
-#define SCHED_ID_COUNT                2u        /*任务总数*/
+#define SCHED_ID_COUNT                3u        /* 任务总数 */
 
-#define SCHED_PERIOD_LOG_MS           100u      /* 日志任务周期 *日志任务周期*/
+#define SCHED_PERIOD_LOG_MS           100u      /* 日志任务周期 */
 #define SCHED_PHASE_LOG_MS            0u        /* 日志任务相位 */
 #define SCHED_PERIOD_HEARTBEAT_MS     1000u     /* 心跳任务周期 */
 #define SCHED_PHASE_HEARTBEAT_MS      50u       /* 心跳任务相位 */
+#define SCHED_PERIOD_UART_MS          5u        /* 串口任务周期。发送已是中断，5ms 够把 115200 的字节搬走，也躲开 1ms 的超周期判断 */
+#define SCHED_PHASE_UART_MS           2u        /* 躲开日志相位 0 */
+
+
+#define UART_BAUDRATE                 115200u   /*波特率*/
+#define UART_RX_TAKE_MAX              128u      /* 上层一次最多从环里拿走的字节数 */
+
+
+#define PRINT_ENABLE                  1u        /*串口功能开关1-打开0-关闭*/
 
 #define EVT_NONE                      0u        /*默认值0没有其他任务给某个任务传事件*/
 #define EVT_LOG_EMERGENCY             1u        /* 事件1：看门狗要求记一条紧急日志 */
@@ -41,8 +51,11 @@
 #if (SCHED_ID_COUNT > SCHED_TASK_MAX)
 #error "SCHED_ID_COUNT exceeds SCHED_TASK_MAX"
 #endif
-#if (SCHED_PHASE_HEARTBEAT_MS >= SCHED_PERIOD_HEARTBEAT_MS) || (SCHED_PHASE_LOG_MS >= SCHED_PERIOD_LOG_MS)
+#if (SCHED_PHASE_HEARTBEAT_MS >= SCHED_PERIOD_HEARTBEAT_MS) || (SCHED_PHASE_LOG_MS >= SCHED_PERIOD_LOG_MS) || (SCHED_PHASE_UART_MS >= SCHED_PERIOD_UART_MS)
 #error "phase must be smaller than period"
+#endif
+#if (UART_BAUDRATE == 0u) || (UART_RX_TAKE_MAX == 0u)
+#error "uart baud and take limit must be non-zero"
 #endif
 
 #endif /* FW_APP_00_SYSTEM_SYSTEM_CONFIG_H_ */
