@@ -3,13 +3,14 @@
 #include <stdarg.h>
 #include <stddef.h>
 
+#if (PRINT_ENABLE != 0u)
 static print_putc_fn s_putc;
+#endif
 
 static result_t print_init(print_putc_fn putc)
 {
 #if (PRINT_ENABLE == 0u)
     (void)putc;
-    s_putc = NULL;
     return RES_OK;
 #else
     if (putc == NULL)

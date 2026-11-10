@@ -8,7 +8,7 @@
  * 约定：
  *   1. 一次最多拿走 UART_RX_TAKE_MAX 个字节，并且不超过发送队列的空位。剩下的留在环里。
  *   2. 拿走后放进发送队列就返回，不等字节离开芯片。发送和接收同时进行。
- *   3. PRINT_ENABLE 为 0 时本任务不读环。环只能有一个消费者，后期留给 USB。
+ *   3. PRINT_ENABLE 为 0 时本任务不读环，也不调用打印。环只能有一个消费者，后期留给 USB。
  *   4. 本任务不解析协议，也不认识 USB 帧。
  */
 #ifndef FW_APP_06_APP_UART_MONITOR_APP_UART_MONITOR_H_

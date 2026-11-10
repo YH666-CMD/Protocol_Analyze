@@ -36,7 +36,11 @@
 #define UART_RX_TAKE_MAX              128u      /* 上层一次最多从环里拿走的字节数 */
 
 
-#define PRINT_ENABLE                  1u        /*串口功能开关1-打开0-关闭*/
+/*
+ * 1：测试打印编进程序。含格式化和回显。
+ * 0：格式化和回显不进程序。串口收发、发送队列、接收环都保留，留给以后和 USB 配合。
+ */
+#define PRINT_ENABLE                  0u
 
 #define EVT_NONE                      0u        /*默认值0没有其他任务给某个任务传事件*/
 #define EVT_LOG_EMERGENCY             1u        /* 事件1：看门狗要求记一条紧急日志 */

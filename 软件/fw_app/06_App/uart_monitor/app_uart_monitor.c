@@ -1,15 +1,17 @@
 #include "app_uart_monitor.h"
 #include "config.h"
 #include "drv_uart.h"
+#if (PRINT_ENABLE != 0u)
 #include "print.h"
 #include "ring_buffer.h"
+#endif
 #include <stddef.h>
 
 /*
  * 先看发送队列还空多少，再从环里拿，拿到就入队。
  * 入队后立刻返回。字节由发送中断写出去，这里不等线路。
  */
-#if PRINT_ENABLE
+#if (PRINT_ENABLE != 0u)
 static void uart_rx_echo(void)
 {
     rb_t *rb;
@@ -49,13 +51,12 @@ result_t app_uart_monitor_init(void)
         return rc;
     }
 
+#if (PRINT_ENABLE != 0u)
     rc = print_sw_driver.pf_init(drv_uart.pf_putc);
     if (rc != RES_OK)
     {
         return rc;
     }
-
-#if PRINT_ENABLE
     (void)print_sw_driver.pf_printf("uart rx ready\r\n");
 #endif
     return RES_OK;
@@ -63,7 +64,7 @@ result_t app_uart_monitor_init(void)
 
 result_t app_uart_monitor_on_tick(uint32_t now_ms, uint32_t elapsed_ms, uint32_t event)
 {
-#if PRINT_ENABLE
+#if (PRINT_ENABLE != 0u)
     (void)now_ms;
     (void)elapsed_ms;
     (void)event;
