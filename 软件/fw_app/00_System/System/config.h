@@ -18,8 +18,9 @@
 #define SCHED_ID_LOG                  0u        /* 日志任务 */
 #define SCHED_ID_HEARTBEAT            1u        /* 心跳任务 */
 #define SCHED_ID_UART                 2u        /* 串口接收的测试消费者。后期换成 USB 时，这个任务不再读环 */
+#define SCHED_ID_USB                  3u        /* USB 枚举。组包上传以后加在这个任务里 */
 
-#define SCHED_ID_COUNT                3u        /* 任务总数 */
+#define SCHED_ID_COUNT                4u        /* 任务总数 */
 
 #define SCHED_PERIOD_LOG_MS           100u      /* 日志任务周期 */
 #define SCHED_PHASE_LOG_MS            0u        /* 日志任务相位 */
@@ -27,6 +28,8 @@
 #define SCHED_PHASE_HEARTBEAT_MS      50u       /* 心跳任务相位 */
 #define SCHED_PERIOD_UART_MS          5u        /* 串口任务周期。发送已是中断，5ms 够把 115200 的字节搬走，也躲开 1ms 的超周期判断 */
 #define SCHED_PHASE_UART_MS           2u        /* 躲开日志相位 0 */
+#define SCHED_PERIOD_USB_MS           10u       /* USB 任务周期。枚举在中断里，这里先留着以后组包 */
+#define SCHED_PHASE_USB_MS            7u        /* 躲开日志相位 0 和串口相位 2 */
 
 
 #define UART_BAUDRATE                 115200u   /*波特率*/
@@ -51,7 +54,7 @@
 #if (SCHED_ID_COUNT > SCHED_TASK_MAX)
 #error "SCHED_ID_COUNT exceeds SCHED_TASK_MAX"
 #endif
-#if (SCHED_PHASE_HEARTBEAT_MS >= SCHED_PERIOD_HEARTBEAT_MS) || (SCHED_PHASE_LOG_MS >= SCHED_PERIOD_LOG_MS) || (SCHED_PHASE_UART_MS >= SCHED_PERIOD_UART_MS)
+#if (SCHED_PHASE_HEARTBEAT_MS >= SCHED_PERIOD_HEARTBEAT_MS) || (SCHED_PHASE_LOG_MS >= SCHED_PERIOD_LOG_MS) || (SCHED_PHASE_UART_MS >= SCHED_PERIOD_UART_MS) || (SCHED_PHASE_USB_MS >= SCHED_PERIOD_USB_MS)
 #error "phase must be smaller than period"
 #endif
 #if (UART_BAUDRATE == 0u) || (UART_RX_TAKE_MAX == 0u)

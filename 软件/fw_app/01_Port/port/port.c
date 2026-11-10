@@ -71,7 +71,7 @@ void app_init(void)
     bsp_wdt.pf_start();
 }
 
-/* 主循环一次只推进一轮调度。没到下一毫秒时，睡觉发生在调度器里面。 */
+/* 主循环一次只推进一轮调度。 */
 void app_loop(void)
 {
     (void)sched_sw_driver.pf_poll(&s_sched);

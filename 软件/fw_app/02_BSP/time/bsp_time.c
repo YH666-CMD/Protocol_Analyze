@@ -86,10 +86,10 @@ static uint32_t time_now_ms(void)
     return s_ms;
 }
 
-/* 毫秒空闲时由调度器调用。SysTick 或其他中断会把 CPU 叫醒。 */
+/* 空闲时马上返回。协议分析仪不睡眠。
+ * USB 写分组缓冲时 CPU 必须醒着，进去睡觉会丢掉 SETUP。 */
 static void time_wait(void)
 {
-    __WFI();
 }
 
 /* 上电配置时先清空。调度器准备好以后再挂上。 */

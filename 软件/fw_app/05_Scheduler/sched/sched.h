@@ -13,7 +13,7 @@
  *   4. now_us 和 print_task 都传 NULL 时不测耗时。测时打开后，超过本任务周期会返回 RES_OVERRUN。
  *   5. 新任务只要写进任务表，测时和超时检查会跟着跑，不用在任务函数里再包一层。
  *   6. pf_enable 是任务开关。0 停止调度，非 0 恢复。停止期间周期和事件都不会跑这个任务。
- *   7. 毫秒没有变化时，先把已经进邮箱的事件发出去，再调用 wait。wait 为空就不睡。
+ *   7. 毫秒没有变化时，先把已经进邮箱的事件发出去，再调用 wait。wait 为空就不调用。
  *   8. on_stuck 由节拍中断调用，只能记一条记录。任务若随后返回，会再调用一次把记录撤掉。
  */
 #ifndef FW_APP_05_SCHEDULER_SCHED_SCHED_H_
@@ -40,7 +40,7 @@ typedef uint32_t (*sched_now_ms_fn)(void);  /*取当前毫秒*/
 typedef uint32_t (*sched_now_us_fn)(void);  /*取当前微秒（毫秒×1000 + 本毫秒内走过的微秒）传 NULL 表示不测*/
 typedef result_t (*sched_print_fn)(const char *name, uint32_t cost_us);/*每任务耗时输出,参数：任务名、本次花掉的微秒。*/
 typedef result_t (*sched_kick_fn)(uint32_t round_ms);                  /*喂狗函数,参数：本轮任务耗时毫秒。*/
-typedef void     (*sched_wait_fn)(void);    /*空闲睡眠*/
+typedef void     (*sched_wait_fn)(void);    /*空闲时调用，必须马上返回*/
 /*
  * sched_stuck_fn：任务卡死记录。
  * 参数：
@@ -80,7 +80,7 @@ typedef struct
     sched_now_us_fn     now_us;      /*注入的“取微秒”函数*/
     sched_print_fn      print_task;  /*注入的“打印任务耗时”函数*/
     sched_kick_fn       kick;        /*注入的“按轮喂狗”函数*/
-    sched_wait_fn       wait;        /*注入的“空闲睡眠”函数*/
+    sched_wait_fn       wait;        /*空闲回调，不做睡眠*/
     sched_stuck_fn      on_stuck;    /*注入的“卡死记录”函数*/
     uint32_t            last_ms;     /*上一次 pf_poll 看到的毫秒。用来判断“这一毫秒处理过没有”*/
     uint32_t            round_start; /*本轮开始时刻。kick 的参数 = now - round_start。*/
@@ -105,7 +105,7 @@ typedef struct
      *   now_us     —— 取微秒函数，NULL 表示不测耗时；
      *   print_task —— 耗时输出，NULL 表示不输出；
      *   kick       —— 按轮喂狗，NULL 表示不喂；
-     *   wait       —— 空闲睡眠，NULL 表示不睡；
+     *   wait       —— 空闲回调，NULL 表示不调用；必须马上返回，不能睡眠。
      *   on_stuck   —— 卡死记录，NULL 表示不记录。
      *
      * 返回：
@@ -117,7 +117,7 @@ typedef struct
                         sched_kick_fn kick, sched_wait_fn wait, sched_stuck_fn on_stuck);
     /*
      * pf_poll：推进一轮调度。
-     * - 毫秒没变：发事件，清 in_poll，调用 wait 睡觉；
+     * - 毫秒没变：发事件，清 in_poll，调用 wait；
      * - 毫秒变了：发事件，跑到期任务，每跑完一个再发事件，最后按轮喂狗。
      * 返回本次遇到的第一个错误（RES_OK 表示都正常）。
      */

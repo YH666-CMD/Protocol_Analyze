@@ -3,9 +3,10 @@
 #include "log.h"
 #include "app_heartbeat.h"
 #include "app_uart_monitor.h"
+#include "app_usb_comm.h"
 #include <stddef.h>
 
-#if (SCHED_ID_LOG != 0u) || (SCHED_ID_HEARTBEAT != 1u) || (SCHED_ID_UART != 2u)
+#if (SCHED_ID_LOG != 0u) || (SCHED_ID_HEARTBEAT != 1u) || (SCHED_ID_UART != 2u) || (SCHED_ID_USB != 3u)
 #error "task id macros must match the table order below"
 #endif
 
@@ -74,6 +75,13 @@ static const sched_task_t s_tasks[] =
         .phase_ms   = SCHED_PHASE_UART_MS,
         .pf_init    = app_uart_monitor_init,
         .pf_on_tick = app_uart_monitor_on_tick,
+    },
+    {
+        .name       = "usb",
+        .period_ms  = SCHED_PERIOD_USB_MS,
+        .phase_ms   = SCHED_PHASE_USB_MS,
+        .pf_init    = app_usb_comm_init,
+        .pf_on_tick = app_usb_comm_on_tick,
     },
 };
 

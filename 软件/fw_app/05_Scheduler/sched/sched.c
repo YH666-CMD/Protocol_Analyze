@@ -437,7 +437,7 @@ static result_t sched_init(sched_t *s, const sched_task_t *table, sched_task_rt_
     return err;
 }
 
-/*轮询调用 新的一毫秒先发事件，再跑到期任务，每个任务返回后再发一次。毫秒没变就只发事件然后睡觉。 */
+/*轮询调用 新的一毫秒先发事件，再跑到期任务，每个任务返回后再发一次。毫秒没变就只发事件然后调用 wait。 */
 static result_t sched_poll(sched_t *s)
 {
     result_t err;
@@ -466,7 +466,7 @@ static result_t sched_poll(sched_t *s)
     if (now == s->last_ms)
     {
         /* 这一毫秒已经处理过了。
-         * 先把邮箱里的事件发出去，再睡觉。
+         * 先把邮箱里的事件发出去，再调用 wait。
          * 清 in_poll 必须在 wait 之前，原因见函数头注释。 */
         err = sched_events(s, now);
         s->in_poll = 0u;
