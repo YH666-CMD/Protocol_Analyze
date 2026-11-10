@@ -2,6 +2,7 @@
 #include "bsp_clk.h"
 #include "config.h"
 #include "ch32v20x.h"
+#include <stddef.h>
 
 /*
  * 沁恒 SysTick CTLR：
@@ -19,15 +20,25 @@
 #define SYSTICK_CTLR_INIT   (1u << 5)
 
 static volatile uint32_t s_ms;
+static bsp_time_ms_fn s_ms_hook;
 
 void SysTick_Handler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 
+/* 清掉中断标志，毫秒加一，再做上层挂上的检查。没挂钩子就只计时。 */
 void SysTick_Handler(void)
 {
+    uint32_t now;
+
     SysTick->SR = 0;
     s_ms++;
+    now = s_ms;
+    if (s_ms_hook != NULL)
+    {
+        s_ms_hook(now);
+    }
 }
 
+/* 主频不够分出 1 毫秒，时基不能启动。 */
 static void time_halt(void)
 {
     for (;;)
@@ -42,6 +53,7 @@ static void time_init(void)
     uint32_t ticks;
 
     s_ms = 0;
+    s_ms_hook = NULL;
     hz = bsp_clk.pf_core_hz();
     if (hz < SCHED_TICK_HZ)
     {
@@ -74,9 +86,61 @@ static uint32_t time_now_ms(void)
     return s_ms;
 }
 
+/* 毫秒空闲时由调度器调用。SysTick 或其他中断会把 CPU 叫醒。 */
+static void time_wait(void)
+{
+    __WFI();
+}
+
+/* 上电配置时先清空。调度器准备好以后再挂上。 */
+static void time_set_ms_hook(bsp_time_ms_fn hook)
+{
+    s_ms_hook = hook;
+}
+
+static uint32_t time_cycles(void)
+{
+    return (uint32_t)SysTick->CNT;
+}
+
+/* 调度器在测时打开时调用。现在没有打印口，只把参数留在接口上 */
+static result_t time_print_task(const char *name, uint32_t cost_us)
+{
+    (void)name;
+    (void)cost_us;
+    return RES_OK;
+}
+
+/* 毫秒和本毫秒的计数要属于同一时刻。读的过程中毫秒变了就重读。 */
+static uint32_t time_now_us(void)
+{
+    uint32_t ms;
+    uint32_t cnt;
+    uint32_t per_us;
+
+    per_us = bsp_clk.pf_core_hz() / 1000000u;
+    if (per_us == 0u)
+    {
+        return 0u;
+    }
+
+    do
+    {
+        ms = s_ms;
+        cnt = (uint32_t)SysTick->CNT;
+    } while (ms != s_ms);
+
+    return (ms * 1000u) + (cnt / per_us);
+}
+
 const bsp_time_driver_t bsp_time =
 {
-    .pf_init   = time_init,
-    .pf_start  = time_start,
-    .pf_now_ms = time_now_ms,
+    .pf_init    = time_init,
+    .pf_start   = time_start,
+    .pf_now_ms  = time_now_ms,
+    .pf_cycles  = time_cycles,
+    .pf_now_us       = time_now_us,
+    .pf_print_task   = time_print_task,
+    .pf_wait         = time_wait,
+    .pf_set_ms_hook  = time_set_ms_hook,
 };

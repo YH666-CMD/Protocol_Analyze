@@ -1,8 +1,11 @@
 eclipse.preferences.version=1
 encoding//User/main.c=UTF-8
+encoding//User/system_ch32v20x.c=UTF-8
 encoding//fw_app/00_System/System/config.h=UTF-8
+encoding//fw_app/01_Port/port/port.c=UTF-8
 encoding//fw_app/02_BSP/board/bsp_board.c=UTF-8
 encoding//fw_app/02_BSP/time/bsp_time.c=UTF-8
+encoding//fw_app/02_BSP/wdt/bsp_wdt.c=UTF-8
 encoding//fw_app/04_Components/CRC/crc.c=UTF-8
 encoding//fw_app/04_Components/CRC/crc.h=UTF-8
 encoding//fw_app/04_Components/aes/aes.c=UTF-8

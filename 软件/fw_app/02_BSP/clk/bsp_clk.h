@@ -13,11 +13,21 @@
 #include <stdint.h>
 #include "bsp_gpio.h"
 
+/* 上电读到的系统时钟来源。这里不切换时钟。 */
+typedef enum
+{
+    BSP_CLK_SRC_HSI = 0,
+    BSP_CLK_SRC_HSE,
+    BSP_CLK_SRC_PLL,
+    BSP_CLK_SRC_UNKNOWN
+} bsp_clk_src_t;
+
 typedef struct
 {
-    void     (*pf_init)(void);
-    uint32_t (*pf_core_hz)(void);
-    void     (*pf_gpio_clock_on)(bsp_pin_id_t id);
+    void          (*pf_init)(void);
+    uint32_t      (*pf_core_hz)(void);
+    void          (*pf_gpio_clock_on)(bsp_pin_id_t id);
+    bsp_clk_src_t (*pf_source)(void);
 } bsp_clk_driver_t;
 
 extern const bsp_clk_driver_t bsp_clk;

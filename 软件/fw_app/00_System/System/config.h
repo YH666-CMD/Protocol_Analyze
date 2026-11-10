@@ -6,14 +6,43 @@
  *      introduction: 总配置开关（使能模块、功能开关）
  *
  * 调度器不包含本文件。任务周期由 sched_tasks.c 使用。
- * 丢拍阈值写在 sched.c 内部。
+ * 任务编号必须和 sched_tasks.c 里的表顺序一致。
  */
 #ifndef FW_APP_00_SYSTEM_SYSTEM_CONFIG_H_
 #define FW_APP_00_SYSTEM_SYSTEM_CONFIG_H_
 
-#define SCHED_TICK_HZ                1000u
-#define SCHED_TASK_MAX               8u
-#define SCHED_PERIOD_HEARTBEAT_MS    1000u
-#define SCHED_PHASE_HEARTBEAT_MS     0u
+#define SCHED_TICK_HZ                 1000u     /* 1 ms 一个节拍 */
+#define SCHED_TASK_MAX                8u        /* 任务表容量 */
+#define SCHED_TIME_MEASURE_ENABLE     1u        /* 1：记录每个任务本次耗时，并在超过周期时报错 */
+
+#define SCHED_ID_LOG                  0u        /* 日志任务*/ 
+#define SCHED_ID_HEARTBEAT            1u        /* 心跳任务*/
+
+#define SCHED_ID_COUNT                2u        /*任务总数*/
+
+#define SCHED_PERIOD_LOG_MS           100u      /* 日志任务周期 *日志任务周期*/
+#define SCHED_PHASE_LOG_MS            0u        /* 日志任务相位 */
+#define SCHED_PERIOD_HEARTBEAT_MS     1000u     /* 心跳任务周期 */
+#define SCHED_PHASE_HEARTBEAT_MS      50u       /* 心跳任务相位 */
+
+#define EVT_NONE                      0u        /*默认值0没有其他任务给某个任务传事件*/
+#define EVT_LOG_EMERGENCY             1u        /* 事件1：看门狗要求记一条紧急日志 */
+
+#define WDT_ENABLE                    0u        /* 1：使能看门狗，0：不使能看门狗 */
+#define WDT_ROUND_MAX_MS              3000u     /* 软件任务一轮最长时间 */
+#define WDT_HW_TIMEOUT_MS             4000u     /* 硬件看门狗真实超时时间 */
+#define WDT_LOG_WAIT_SPIN             8000u     /* 放弃喂狗前空转这么多次，给紧急 RAM 写完144MHZ大概几微妙 */
+
+#define PORT_TIMEBASE_SPIN            8000000u  /* 等毫秒计数变化的上限 正常1ms就变了，这个已经几百ms了*/
+
+#define LOG_DAILY_DEPTH               8u        /*日常日志在 RAM 里最多攒多少条*/
+#define LOG_EMERGENCY_FLAG            0xA5u     /*复位后是否需要写FLASH的标志位，目前在bss段会被清，后续需要加到额外划分ram区间里*/
+
+#if (SCHED_ID_COUNT > SCHED_TASK_MAX)
+#error "SCHED_ID_COUNT exceeds SCHED_TASK_MAX"
+#endif
+#if (SCHED_PHASE_HEARTBEAT_MS >= SCHED_PERIOD_HEARTBEAT_MS) || (SCHED_PHASE_LOG_MS >= SCHED_PERIOD_LOG_MS)
+#error "phase must be smaller than period"
+#endif
 
 #endif /* FW_APP_00_SYSTEM_SYSTEM_CONFIG_H_ */
