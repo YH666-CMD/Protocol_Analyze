@@ -65,7 +65,7 @@ typedef struct
     /*
      * pf_rx_ring：交出接收环。
      * 生产者是本驱动的中断。消费者在主循环里用 rb_sw_driver 读。
-     * 同一时刻只能有一个消费者。测试阶段是串口打印任务，以后是 USB。
+     * 同一时刻只能有一个消费者。现在是 USB 协议任务。
      */
     rb_t    *(*pf_rx_ring)(void);
     /*

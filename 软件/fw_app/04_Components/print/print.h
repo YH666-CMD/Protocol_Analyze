@@ -11,7 +11,7 @@
  *      串口自己的发送队列不受这个开关影响。
  *   2. 本文件不出现串口寄存器。发送一个字节的函数由调用方传进来。
  *   3. pf_printf 支持 %c %s %d %u %x %X %%，以及 %02x 这种宽度和补零。没有浮点。
- *   4. pf_write 原样发送一段字节，不追加换行。消费者用它把环里的数据打出去。
+ *   4. pf_write 原样发送一段字节，不追加换行。不再作为接收环的消费者。
  */
 #ifndef FW_APP_04_COMPONENTS_PRINT_PRINT_H_
 #define FW_APP_04_COMPONENTS_PRINT_PRINT_H_

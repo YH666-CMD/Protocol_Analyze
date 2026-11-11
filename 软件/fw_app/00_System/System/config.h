@@ -17,8 +17,8 @@
 
 #define SCHED_ID_LOG                  0u        /* 日志任务 */
 #define SCHED_ID_HEARTBEAT            1u        /* 心跳任务 */
-#define SCHED_ID_UART                 2u        /* 串口接收的测试消费者。后期换成 USB 时，这个任务不再读环 */
-#define SCHED_ID_USB                  3u        /* USB 枚举。组包上传以后加在这个任务里 */
+#define SCHED_ID_UART                 2u        /* 串口驱动初始化。不读接收环 */
+#define SCHED_ID_USB                  3u        /* USB 协议任务。读串口环，组帧上传，拆下行帧 */
 
 #define SCHED_ID_COUNT                4u        /* 任务总数 */
 
@@ -28,7 +28,7 @@
 #define SCHED_PHASE_HEARTBEAT_MS      50u       /* 心跳任务相位 */
 #define SCHED_PERIOD_UART_MS          5u        /* 串口任务周期。发送已是中断，5ms 够把 115200 的字节搬走，也躲开 1ms 的超周期判断 */
 #define SCHED_PHASE_UART_MS           2u        /* 躲开日志相位 0 */
-#define SCHED_PERIOD_USB_MS           10u       /* USB 任务周期。枚举在中断里，这里先留着以后组包 */
+#define SCHED_PERIOD_USB_MS           10u       /* USB 任务周期。一拍可发多帧，115200 下 10ms 环里大约 115 字节 */
 #define SCHED_PHASE_USB_MS            7u        /* 躲开日志相位 0 和串口相位 2 */
 
 
@@ -37,8 +37,8 @@
 
 
 /*
- * 1：测试打印编进程序。含格式化和回显。
- * 0：格式化和回显不进程序。串口收发、发送队列、接收环都保留，留给以后和 USB 配合。
+ * 1：测试打印编进程序，只给 USB 日志当出口。
+ * 0：格式化不进程序。串口收发和接收环都在。环的消费者是 USB 协议任务，打印不再读环。
  */
 #define PRINT_ENABLE                  0u
 
