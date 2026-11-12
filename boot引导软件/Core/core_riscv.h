@@ -556,27 +556,6 @@ __attribute__( ( always_inline ) ) RV_STATIC_INLINE int32_t __AMOXOR_W(volatile 
     return *addr;
 }
 
-/* Core_Exported_Functions */  
-extern uint32_t __get_MSTATUS(void);
-extern void __set_MSTATUS(uint32_t value);
-extern uint32_t __get_MISA(void);
-extern void __set_MISA(uint32_t value);
-extern uint32_t __get_MTVEC(void);
-extern void __set_MTVEC(uint32_t value);
-extern uint32_t __get_MSCRATCH(void);
-extern void __set_MSCRATCH(uint32_t value);
-extern uint32_t __get_MEPC(void);
-extern void __set_MEPC(uint32_t value);
-extern uint32_t __get_MCAUSE(void);
-extern void __set_MCAUSE(uint32_t value);
-extern uint32_t __get_MTVAL(void);
-extern void __set_MTVAL(uint32_t value);
-extern uint32_t __get_MVENDORID(void);
-extern uint32_t __get_MARCHID(void);
-extern uint32_t __get_MIMPID(void);
-extern uint32_t __get_MHARTID(void);
-extern uint32_t __get_SP(void);
-
 #ifdef __cplusplus
 }
 #endif

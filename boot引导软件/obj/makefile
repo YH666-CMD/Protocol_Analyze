@@ -1,6 +1,6 @@
 ################################################################################
 # MRS Version: 1.9.2
-# ×Ô¶¯Éú³ÉµÄÎÄ¼þ¡£²»Òª±à¼­£¡
+# ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½Éµï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½à¼­ï¿½ï¿½
 ################################################################################
 
 -include ../makefile.init
@@ -11,9 +11,6 @@ RM := rm -rf
 -include sources.mk
 -include User/subdir.mk
 -include Startup/subdir.mk
--include Peripheral/src/subdir.mk
--include Debug/subdir.mk
--include Core/subdir.mk
 -include subdir.mk
 -include objects.mk
 
@@ -48,12 +45,12 @@ SECONDARY_SIZE += \
 CH32V203C8T6.siz \
 
 
-# ËùÓÐÄ¿±ê
+# ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½
 all: CH32V203C8T6.elf secondary-outputs
 
-# ¹¤¾ßµ÷ÓÃ
+# ï¿½ï¿½ï¿½ßµï¿½ï¿½ï¿½
 CH32V203C8T6.elf: $(OBJS) $(USER_OBJS)
-	@	@	riscv-none-embed-gcc -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -Oz -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized  -g -T "D:\desktop\Protocol_Analyze\Protocol_Analyze\bootÒýµ¼Èí¼þ\Ld\Link.ld" -nostartfiles -Xlinker --gc-sections -Wl,-Map,"CH32V203C8T6.map" --specs=nano.specs --specs=nosys.specs -o "CH32V203C8T6.elf" $(OBJS) $(USER_OBJS) $(LIBS)
+	@	@	riscv-none-embed-gcc -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized  -g -T "D:\desktop\Protocol_Analyze\Protocol_Analyze\bootï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\Ld\Link.ld" -nostartfiles -Xlinker --gc-sections -Wl,-Map,"CH32V203C8T6.map" --specs=nano.specs --specs=nosys.specs -o "CH32V203C8T6.elf" $(OBJS) $(USER_OBJS) $(LIBS)
 	@	@
 CH32V203C8T6.hex: CH32V203C8T6.elf
 	@	riscv-none-embed-objcopy -O ihex "CH32V203C8T6.elf"  "CH32V203C8T6.hex"
@@ -64,7 +61,7 @@ CH32V203C8T6.lst: CH32V203C8T6.elf
 CH32V203C8T6.siz: CH32V203C8T6.elf
 	@	riscv-none-embed-size --format=berkeley "CH32V203C8T6.elf"
 	@	@
-# ÆäËûÄ¿±ê
+# ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½
 clean:
 	-$(RM) $(ASM_UPPER_DEPS)$(OBJS)$(SECONDARY_FLASH)$(SECONDARY_LIST)$(SECONDARY_SIZE)$(ASM_DEPS)$(S_DEPS)$(S_UPPER_DEPS)$(C_DEPS) CH32V203C8T6.elf
 	-@
