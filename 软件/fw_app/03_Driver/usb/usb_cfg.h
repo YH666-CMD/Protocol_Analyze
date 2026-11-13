@@ -21,7 +21,7 @@
 
 /* 主频。只允许 48 / 96 / 144 MHz，对应 USB 时钟 1 / 2 / 3 分频。 */
 #ifndef USB_HCLK_HZ
-#define USB_HCLK_HZ                 144000000u
+#define USB_HCLK_HZ                 96000000u
 #endif
 
 /* 设备描述符里的厂商和产品。小端写入。 */

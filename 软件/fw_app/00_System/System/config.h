@@ -48,7 +48,7 @@
 #define WDT_ENABLE                    0u        /* 1：使能看门狗，0：不使能看门狗 */
 #define WDT_ROUND_MAX_MS              3000u     /* 软件任务一轮最长时间 */
 #define WDT_HW_TIMEOUT_MS             4000u     /* 硬件看门狗真实超时时间 */
-#define WDT_LOG_WAIT_SPIN             8000u     /* 放弃喂狗前空转这么多次，给紧急 RAM 写完144MHZ大概几微妙 */
+#define WDT_LOG_WAIT_SPIN             8000u     /* 放弃喂狗前空转这么多次，给紧急 RAM 写完。96MHz 下大约几微秒 */
 
 #define PORT_TIMEBASE_SPIN            8000000u  /* 等毫秒计数变化的上限 正常1ms就变了，这个已经几百ms了*/
 

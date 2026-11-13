@@ -168,9 +168,5 @@
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 	</storageModule>
-	<storageModule moduleId="refreshScope" versionNumber="2">
-		<configuration configurationName="obj">
-			<resource resourceType="PROJECT" workspacePath="/CH32V203C8T6"/>
-		</configuration>
-	</storageModule>
+	
 </cproject>

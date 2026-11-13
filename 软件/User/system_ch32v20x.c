@@ -19,9 +19,9 @@
 //#define SYSCLK_FREQ_48MHz_HSE  48000000
 //#define SYSCLK_FREQ_56MHz_HSE  56000000
 //#define SYSCLK_FREQ_72MHz_HSE  72000000
-//#define SYSCLK_FREQ_96MHz_HSE  96000000  /* C8T6(D6): HSE 8MHz × PLL12 = 96MHz */
+#define SYSCLK_FREQ_96MHz_HSE  96000000  /* C8T6(D6): HSE 8MHz × PLL12 = 96MHz */
 //#define SYSCLK_FREQ_120MHz_HSE  120000000
-#define SYSCLK_FREQ_144MHz_HSE  144000000  /* C8T6(D6): HSE 8MHz × PLL18 = 144MHz (最高) */
+//#define SYSCLK_FREQ_144MHz_HSE  144000000  /* C8T6(D6): HSE 8MHz × PLL18 = 144MHz (最高) */
 //#define SYSCLK_FREQ_HSI    HSI_VALUE
 //#define SYSCLK_FREQ_48MHz_HSI  48000000
 //#define SYSCLK_FREQ_56MHz_HSI  56000000
@@ -456,7 +456,31 @@ static void SetSysClockTo72_HSE(void)
 
 #elif defined SYSCLK_FREQ_96MHz_HSE
 
-/* SetSysClockTo96_HSE — HSE + PLL，系统时钟 96MHz */
+/* HSE 起振失败时，用 HSI×12 升到 96MHz。USB 分频按 96MHz 编译，不能停在 8MHz。 */
+static void SetSysClockTo96_HSI_Fallback(void)
+{
+    EXTEN->EXTEN_CTR |= EXTEN_PLL_HSI_PRE;
+
+    RCC->CFGR0 |= (uint32_t)RCC_HPRE_DIV1;
+    RCC->CFGR0 |= (uint32_t)RCC_PPRE2_DIV1;
+    RCC->CFGR0 |= (uint32_t)RCC_PPRE1_DIV2;
+
+    RCC->CFGR0 &= (uint32_t)((uint32_t)~(RCC_PLLSRC | RCC_PLLXTPRE | RCC_PLLMULL));
+    RCC->CFGR0 |= (uint32_t)(RCC_PLLSRC_HSI_Div2 | RCC_PLLMULL12);
+
+    RCC->CTLR |= RCC_PLLON;
+    while((RCC->CTLR & RCC_PLLRDY) == 0)
+    {
+    }
+
+    RCC->CFGR0 &= (uint32_t)((uint32_t)~(RCC_SW));
+    RCC->CFGR0 |= (uint32_t)RCC_SW_PLL;
+    while((RCC->CFGR0 & (uint32_t)RCC_SWS) != (uint32_t)0x08)
+    {
+    }
+}
+
+/* SetSysClockTo96_HSE — 优先 HSE×12=96MHz，失败则回退内部 HSI */
 static void SetSysClockTo96_HSE(void)
 {
   __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
@@ -510,7 +534,7 @@ static void SetSysClockTo96_HSE(void)
   }
   else
   {
-        /* HSE 起振失败，时钟配置无效 */
+        SetSysClockTo96_HSI_Fallback();
   }
 }
 

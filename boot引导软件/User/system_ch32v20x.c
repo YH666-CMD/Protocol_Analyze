@@ -4,22 +4,22 @@
  * 版本               : V1.0.0
  * 日期               : 2021/06/06
  * 说明               : CH32V203C8T6（D6）系统时钟。
- *                      HSE = 8MHz，PLL×18 = 144MHz；HSE 失败时回退 HSI×18。
+ *                      HSE = 8MHz，PLL×12 = 96MHz；HSE 失败时回退 HSI×12。
 *********************************************************************************
 * 版权所有 (c) 2021 南京沁恒微电子股份有限公司
 *******************************************************************************/
 #include "ch32v20x.h"
 
-uint32_t SystemCoreClock = 144000000;
+uint32_t SystemCoreClock = 96000000;
 
 __I uint8_t AHBPrescTable[16] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
 
 static void SetSysClock(void);
-static void SetSysClockTo144_HSI_Fallback(void);
-static void SetSysClockTo144_HSE(void);
+static void SetSysClockTo96_HSI_Fallback(void);
+static void SetSysClockTo96_HSE(void);
 
 /*********************************************************************
- * SystemInit — 复位后初始化 RCC，并把系统时钟升到 144MHz
+ * SystemInit — 复位后初始化 RCC，并把系统时钟升到 96MHz
  *********************************************************************/
 void SystemInit(void)
 {
@@ -90,11 +90,11 @@ void SystemCoreClockUpdate(void)
 
 static void SetSysClock(void)
 {
-    SetSysClockTo144_HSE();
+    SetSysClockTo96_HSE();
 }
 
-/* HSE 起振失败时，用 HSI×18 升到 144MHz */
-static void SetSysClockTo144_HSI_Fallback(void)
+/* HSE 起振失败时，用 HSI×12 升到 96MHz */
+static void SetSysClockTo96_HSI_Fallback(void)
 {
     EXTEN->EXTEN_CTR |= EXTEN_PLL_HSI_PRE;
 
@@ -103,7 +103,7 @@ static void SetSysClockTo144_HSI_Fallback(void)
     RCC->CFGR0 |= (uint32_t)RCC_PPRE1_DIV2;
 
     RCC->CFGR0 &= (uint32_t)((uint32_t)~(RCC_PLLSRC | RCC_PLLXTPRE | RCC_PLLMULL));
-    RCC->CFGR0 |= (uint32_t)(RCC_PLLSRC_HSI_Div2 | RCC_PLLMULL18);
+    RCC->CFGR0 |= (uint32_t)(RCC_PLLSRC_HSI_Div2 | RCC_PLLMULL12);
 
     RCC->CTLR |= RCC_PLLON;
     while ((RCC->CTLR & RCC_PLLRDY) == 0)
@@ -117,8 +117,8 @@ static void SetSysClockTo144_HSI_Fallback(void)
     }
 }
 
-/* 优先 HSE×18 = 144MHz，失败则回退内部 HSI */
-static void SetSysClockTo144_HSE(void)
+/* 优先 HSE×12 = 96MHz，失败则回退内部 HSI */
+static void SetSysClockTo96_HSE(void)
 {
     __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
 
@@ -146,7 +146,7 @@ static void SetSysClockTo144_HSE(void)
         RCC->CFGR0 |= (uint32_t)RCC_PPRE1_DIV2;
 
         RCC->CFGR0 &= (uint32_t)((uint32_t)~(RCC_PLLSRC | RCC_PLLXTPRE | RCC_PLLMULL));
-        RCC->CFGR0 |= (uint32_t)(RCC_PLLSRC_HSE | RCC_PLLXTPRE_HSE | RCC_PLLMULL18);
+        RCC->CFGR0 |= (uint32_t)(RCC_PLLSRC_HSE | RCC_PLLXTPRE_HSE | RCC_PLLMULL12);
 
         RCC->CTLR |= RCC_PLLON;
         while ((RCC->CTLR & RCC_PLLRDY) == 0)
@@ -161,6 +161,6 @@ static void SetSysClockTo144_HSE(void)
     }
     else
     {
-        SetSysClockTo144_HSI_Fallback();
+        SetSysClockTo96_HSI_Fallback();
     }
 }
