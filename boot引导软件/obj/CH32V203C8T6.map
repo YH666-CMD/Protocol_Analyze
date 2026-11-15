@@ -1,7 +1,7 @@
 Archive member included to satisfy reference by file (symbol)
 
 e:/wch_ide_yh/mounriver_studio/toolchain/risc-v embedded gcc/bin/../lib/gcc/riscv-none-embed/8.2.0/rv32imacxw/ilp32\libgcc.a(save-restore.o)
-                              ./User/main.o (__riscv_save_8)
+                              ./User/main.o (__riscv_save_5)
 
 Discarded input sections
 
@@ -67,7 +67,7 @@ END GROUP
  .vector        0x0000000000000004       0xfc ./Startup/startup_ch32v20x_D6.o
                 0x0000000000000100                . = ALIGN (0x40)
 
-.text           0x0000000000000100      0x650
+.text           0x0000000000000100      0x3f4
                 0x0000000000000100                . = ALIGN (0x4)
  *(.text)
  .text          0x0000000000000100       0x60 e:/wch_ide_yh/mounriver_studio/toolchain/risc-v embedded gcc/bin/../lib/gcc/riscv-none-embed/8.2.0/rv32imacxw/ilp32\libgcc.a(save-restore.o)
@@ -99,113 +99,113 @@ END GROUP
                 0x0000000000000154                __riscv_restore_1
  *(.text.*)
  .text.tx_byte  0x0000000000000160       0x18 ./User/main.o
- .text.flash_wait
-                0x0000000000000178       0x22 ./User/main.o
- .text.flash_erase_page
-                0x000000000000019a       0x30 ./User/main.o
- .text.paint    0x00000000000001ca       0x56 ./User/main.o
- .text.tx_val   0x0000000000000220       0x56 ./User/main.o
- .text.tx_mark  0x0000000000000276       0x2a ./User/main.o
+ .text.pause    0x0000000000000178       0x1e ./User/main.o
+ .text.tx_val   0x0000000000000196       0x56 ./User/main.o
+ .text.tx_mark  0x00000000000001ec       0x2a ./User/main.o
+ .text.report_trap
+                0x0000000000000216       0x58 ./User/main.o
+ .text.NMI_Handler
+                0x000000000000026e        0xc ./User/main.o
+                0x000000000000026e                NMI_Handler
  .text.HardFault_Handler
-                0x00000000000002a0        0xc ./User/main.o
-                0x00000000000002a0                HardFault_Handler
+                0x000000000000027a        0xc ./User/main.o
+                0x000000000000027a                HardFault_Handler
  .text.startup.main
-                0x00000000000002ac      0x2c4 ./User/main.o
-                0x00000000000002ac                main
+                0x0000000000000286       0x86 ./User/main.o
+                0x0000000000000286                main
  .text.SystemInit
-                0x0000000000000570      0x156 ./User/system_ch32v20x.o
-                0x0000000000000570                SystemInit
+                0x000000000000030c      0x156 ./User/system_ch32v20x.o
+                0x000000000000030c                SystemInit
  .text.vector_handler
-                0x00000000000006c6        0x2 ./Startup/startup_ch32v20x_D6.o
-                0x00000000000006c6                EXTI2_IRQHandler
-                0x00000000000006c6                TIM1_CC_IRQHandler
-                0x00000000000006c6                SysTick_Handler
-                0x00000000000006c6                PVD_IRQHandler
-                0x00000000000006c6                NMI_Handler
-                0x00000000000006c6                EXTI3_IRQHandler
-                0x00000000000006c6                USBFS_IRQHandler
-                0x00000000000006c6                EXTI0_IRQHandler
-                0x00000000000006c6                I2C2_EV_IRQHandler
-                0x00000000000006c6                ADC1_2_IRQHandler
-                0x00000000000006c6                Break_Point_Handler
-                0x00000000000006c6                SPI1_IRQHandler
-                0x00000000000006c6                TAMPER_IRQHandler
-                0x00000000000006c6                Ecall_M_Mode_Handler
-                0x00000000000006c6                DMA1_Channel4_IRQHandler
-                0x00000000000006c6                USART3_IRQHandler
-                0x00000000000006c6                RTC_IRQHandler
-                0x00000000000006c6                DMA1_Channel7_IRQHandler
-                0x00000000000006c6                CAN1_RX1_IRQHandler
-                0x00000000000006c6                TIM4_IRQHandler
-                0x00000000000006c6                I2C1_EV_IRQHandler
-                0x00000000000006c6                DMA1_Channel6_IRQHandler
-                0x00000000000006c6                UART4_IRQHandler
-                0x00000000000006c6                TIM3_IRQHandler
-                0x00000000000006c6                RCC_IRQHandler
-                0x00000000000006c6                TIM1_TRG_COM_IRQHandler
-                0x00000000000006c6                DMA1_Channel1_IRQHandler
-                0x00000000000006c6                EXTI15_10_IRQHandler
-                0x00000000000006c6                DMA1_Channel8_IRQHandler
-                0x00000000000006c6                EXTI9_5_IRQHandler
-                0x00000000000006c6                SPI2_IRQHandler
-                0x00000000000006c6                DMA1_Channel5_IRQHandler
-                0x00000000000006c6                EXTI4_IRQHandler
-                0x00000000000006c6                USB_LP_CAN1_RX0_IRQHandler
-                0x00000000000006c6                USB_HP_CAN1_TX_IRQHandler
-                0x00000000000006c6                DMA1_Channel3_IRQHandler
-                0x00000000000006c6                TIM1_UP_IRQHandler
-                0x00000000000006c6                WWDG_IRQHandler
-                0x00000000000006c6                Ecall_U_Mode_Handler
-                0x00000000000006c6                TIM2_IRQHandler
-                0x00000000000006c6                SW_Handler
-                0x00000000000006c6                TIM1_BRK_IRQHandler
-                0x00000000000006c6                EXTI1_IRQHandler
-                0x00000000000006c6                RTCAlarm_IRQHandler
-                0x00000000000006c6                USART2_IRQHandler
-                0x00000000000006c6                I2C2_ER_IRQHandler
-                0x00000000000006c6                DMA1_Channel2_IRQHandler
-                0x00000000000006c6                CAN1_SCE_IRQHandler
-                0x00000000000006c6                FLASH_IRQHandler
-                0x00000000000006c6                USBFSWakeUp_IRQHandler
-                0x00000000000006c6                USART1_IRQHandler
-                0x00000000000006c6                I2C1_ER_IRQHandler
-                0x00000000000006c6                USBWakeUp_IRQHandler
+                0x0000000000000462        0x2 ./Startup/startup_ch32v20x_D6.o
+                0x0000000000000462                EXTI2_IRQHandler
+                0x0000000000000462                TIM1_CC_IRQHandler
+                0x0000000000000462                SysTick_Handler
+                0x0000000000000462                PVD_IRQHandler
+                0x0000000000000462                EXTI3_IRQHandler
+                0x0000000000000462                USBFS_IRQHandler
+                0x0000000000000462                EXTI0_IRQHandler
+                0x0000000000000462                I2C2_EV_IRQHandler
+                0x0000000000000462                ADC1_2_IRQHandler
+                0x0000000000000462                Break_Point_Handler
+                0x0000000000000462                SPI1_IRQHandler
+                0x0000000000000462                TAMPER_IRQHandler
+                0x0000000000000462                Ecall_M_Mode_Handler
+                0x0000000000000462                DMA1_Channel4_IRQHandler
+                0x0000000000000462                USART3_IRQHandler
+                0x0000000000000462                RTC_IRQHandler
+                0x0000000000000462                DMA1_Channel7_IRQHandler
+                0x0000000000000462                CAN1_RX1_IRQHandler
+                0x0000000000000462                TIM4_IRQHandler
+                0x0000000000000462                I2C1_EV_IRQHandler
+                0x0000000000000462                DMA1_Channel6_IRQHandler
+                0x0000000000000462                UART4_IRQHandler
+                0x0000000000000462                TIM3_IRQHandler
+                0x0000000000000462                RCC_IRQHandler
+                0x0000000000000462                TIM1_TRG_COM_IRQHandler
+                0x0000000000000462                DMA1_Channel1_IRQHandler
+                0x0000000000000462                EXTI15_10_IRQHandler
+                0x0000000000000462                DMA1_Channel8_IRQHandler
+                0x0000000000000462                EXTI9_5_IRQHandler
+                0x0000000000000462                SPI2_IRQHandler
+                0x0000000000000462                DMA1_Channel5_IRQHandler
+                0x0000000000000462                EXTI4_IRQHandler
+                0x0000000000000462                USB_LP_CAN1_RX0_IRQHandler
+                0x0000000000000462                USB_HP_CAN1_TX_IRQHandler
+                0x0000000000000462                DMA1_Channel3_IRQHandler
+                0x0000000000000462                TIM1_UP_IRQHandler
+                0x0000000000000462                WWDG_IRQHandler
+                0x0000000000000462                Ecall_U_Mode_Handler
+                0x0000000000000462                TIM2_IRQHandler
+                0x0000000000000462                SW_Handler
+                0x0000000000000462                TIM1_BRK_IRQHandler
+                0x0000000000000462                EXTI1_IRQHandler
+                0x0000000000000462                RTCAlarm_IRQHandler
+                0x0000000000000462                USART2_IRQHandler
+                0x0000000000000462                I2C2_ER_IRQHandler
+                0x0000000000000462                DMA1_Channel2_IRQHandler
+                0x0000000000000462                CAN1_SCE_IRQHandler
+                0x0000000000000462                FLASH_IRQHandler
+                0x0000000000000462                USBFSWakeUp_IRQHandler
+                0x0000000000000462                USART1_IRQHandler
+                0x0000000000000462                I2C1_ER_IRQHandler
+                0x0000000000000462                USBWakeUp_IRQHandler
  .text.handle_reset
-                0x00000000000006c8       0x82 ./Startup/startup_ch32v20x_D6.o
-                0x00000000000006c8                handle_reset
+                0x0000000000000464       0x8a ./Startup/startup_ch32v20x_D6.o
+                0x0000000000000464                handle_reset
  *(.rodata)
  *(.rodata*)
- *fill*         0x000000000000074a        0x2 
+ *fill*         0x00000000000004ee        0x2 
  .rodata.tx_val.str1.4
-                0x000000000000074c        0x4 ./User/main.o
+                0x00000000000004f0        0x4 ./User/main.o
                                           0x3 (size before relaxing)
  *(.gnu.linkonce.t.*)
-                0x0000000000000750                . = ALIGN (0x4)
+                0x00000000000004f4                . = ALIGN (0x4)
 
-.rela.dyn       0x0000000000000750        0x0
- .rela.init     0x0000000000000750        0x0 ./User/main.o
- .rela.vector   0x0000000000000750        0x0 ./User/main.o
+.rela.dyn       0x00000000000004f4        0x0
+ .rela.init     0x00000000000004f4        0x0 ./User/main.o
+ .rela.vector   0x00000000000004f4        0x0 ./User/main.o
  .rela.text.handle_reset
-                0x0000000000000750        0x0 ./User/main.o
+                0x00000000000004f4        0x0 ./User/main.o
 
-.fini           0x0000000000000750        0x0
+.fini           0x00000000000004f4        0x0
  *(SORT_NONE(.fini))
-                0x0000000000000750                . = ALIGN (0x4)
+                0x00000000000004f4                . = ALIGN (0x4)
                 [!provide]                        PROVIDE (_etext = .)
                 [!provide]                        PROVIDE (_eitcm = .)
 
-.preinit_array  0x0000000000000750        0x0
+.preinit_array  0x00000000000004f4        0x0
                 [!provide]                        PROVIDE (__preinit_array_start = .)
  *(.preinit_array)
                 [!provide]                        PROVIDE (__preinit_array_end = .)
 
-.init_array     0x0000000000000750        0x0
+.init_array     0x00000000000004f4        0x0
                 [!provide]                        PROVIDE (__init_array_start = .)
  *(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*))
  *(.init_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .ctors)
                 [!provide]                        PROVIDE (__init_array_end = .)
 
-.fini_array     0x0000000000000750        0x0
+.fini_array     0x00000000000004f4        0x0
                 [!provide]                        PROVIDE (__fini_array_start = .)
  *(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*))
  *(.fini_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .dtors)
@@ -225,67 +225,54 @@ END GROUP
  *(SORT_BY_NAME(.dtors.*))
  *(.dtors)
 
-.dalign         0x0000000020000000        0x0 load address 0x0000000000000750
+.dalign         0x0000000020000000        0x0 load address 0x00000000000004f4
                 0x0000000020000000                . = ALIGN (0x4)
                 0x0000000020000000                PROVIDE (_data_vma = .)
 
-.dlalign        0x0000000000000750        0x0
-                0x0000000000000750                . = ALIGN (0x4)
-                0x0000000000000750                PROVIDE (_data_lma = .)
+.dlalign        0x00000000000004f4        0x0
+                0x00000000000004f4                . = ALIGN (0x4)
+                0x00000000000004f4                PROVIDE (_data_lma = .)
 
-.data           0x0000000020000000        0x8 load address 0x0000000000000750
+.data           0x0000000020000000        0x0 load address 0x00000000000004f4
  *(.gnu.linkonce.r.*)
  *(.data .data.*)
  *(.gnu.linkonce.d.*)
                 0x0000000020000000                . = ALIGN (0x8)
                 0x0000000020000800                PROVIDE (__global_pointer$ = (. + 0x800))
  *(.sdata .sdata.*)
- .sdata.g_s0_pass
-                0x0000000020000000        0x4 ./User/main.o
-                0x0000000020000000                g_s0_pass
  *(.sdata2.*)
  *(.gnu.linkonce.s.*)
-                0x0000000020000008                . = ALIGN (0x8)
- *fill*         0x0000000020000004        0x4 
+                0x0000000020000000                . = ALIGN (0x8)
  *(.srodata.cst16)
  *(.srodata.cst8)
  *(.srodata.cst4)
  *(.srodata.cst2)
  *(.srodata .srodata.*)
-                0x0000000020000008                . = ALIGN (0x4)
-                0x0000000020000008                PROVIDE (_edata = .)
+                0x0000000020000000                . = ALIGN (0x4)
+                0x0000000020000000                PROVIDE (_edata = .)
 
-.bss            0x0000000020000008       0x1c load address 0x0000000000000758
-                0x0000000020000008                . = ALIGN (0x4)
-                0x0000000020000008                PROVIDE (_sbss = .)
+.bss            0x0000000020000000       0x10 load address 0x00000000000004f4
+                0x0000000020000000                . = ALIGN (0x4)
+                0x0000000020000000                PROVIDE (_sbss = .)
  *(.sbss*)
- .sbss.g_s0_e800
+ .sbss.g_s3_from
+                0x0000000020000000        0x4 ./User/main.o
+                0x0000000020000000                g_s3_from
+ .sbss.g_s3_mcause
+                0x0000000020000004        0x4 ./User/main.o
+                0x0000000020000004                g_s3_mcause
+ .sbss.g_s3_mepc
                 0x0000000020000008        0x4 ./User/main.o
-                0x0000000020000008                g_s0_e800
- .sbss.g_s0_ef800
+                0x0000000020000008                g_s3_mepc
+ .sbss.g_s3_mstatus
                 0x000000002000000c        0x4 ./User/main.o
-                0x000000002000000c                g_s0_ef800
- .sbss.g_s0_p900
-                0x0000000020000010        0x4 ./User/main.o
-                0x0000000020000010                g_s0_p900
- .sbss.g_s0_pf000
-                0x0000000020000014        0x4 ./User/main.o
-                0x0000000020000014                g_s0_pf000
- .sbss.g_s0_pf700
-                0x0000000020000018        0x4 ./User/main.o
-                0x0000000020000018                g_s0_pf700
- .sbss.g_s0_sum0
-                0x000000002000001c        0x4 ./User/main.o
-                0x000000002000001c                g_s0_sum0
- .sbss.g_s0_sum1
-                0x0000000020000020        0x4 ./User/main.o
-                0x0000000020000020                g_s0_sum1
+                0x000000002000000c                g_s3_mstatus
  *(.gnu.linkonce.sb.*)
  *(.bss*)
  *(.gnu.linkonce.b.*)
  *(COMMON*)
-                0x0000000020000024                . = ALIGN (0x4)
-                0x0000000020000024                PROVIDE (_ebss = .)
+                0x0000000020000010                . = ALIGN (0x4)
+                0x0000000020000010                PROVIDE (_ebss = .)
                 [!provide]                        PROVIDE (_end = _ebss)
                 [!provide]                        PROVIDE (end = .)
 
@@ -298,19 +285,19 @@ END GROUP
                 0x0000000020005000                PROVIDE (_eusrstack = .)
 OUTPUT(CH32V203C8T6.elf elf32-littleriscv)
 
-.debug_info     0x0000000000000000      0xe4b
- .debug_info    0x0000000000000000      0xb45 ./User/main.o
- .debug_info    0x0000000000000b45      0x2e4 ./User/system_ch32v20x.o
- .debug_info    0x0000000000000e29       0x22 ./Startup/startup_ch32v20x_D6.o
+.debug_info     0x0000000000000000      0xabd
+ .debug_info    0x0000000000000000      0x7b7 ./User/main.o
+ .debug_info    0x00000000000007b7      0x2e4 ./User/system_ch32v20x.o
+ .debug_info    0x0000000000000a9b       0x22 ./Startup/startup_ch32v20x_D6.o
 
-.debug_abbrev   0x0000000000000000      0x49a
- .debug_abbrev  0x0000000000000000      0x2e9 ./User/main.o
- .debug_abbrev  0x00000000000002e9      0x19f ./User/system_ch32v20x.o
- .debug_abbrev  0x0000000000000488       0x12 ./Startup/startup_ch32v20x_D6.o
+.debug_abbrev   0x0000000000000000      0x423
+ .debug_abbrev  0x0000000000000000      0x272 ./User/main.o
+ .debug_abbrev  0x0000000000000272      0x19f ./User/system_ch32v20x.o
+ .debug_abbrev  0x0000000000000411       0x12 ./Startup/startup_ch32v20x_D6.o
 
-.debug_loc      0x0000000000000000      0x363
- .debug_loc     0x0000000000000000      0x2b7 ./User/main.o
- .debug_loc     0x00000000000002b7       0xac ./User/system_ch32v20x.o
+.debug_loc      0x0000000000000000      0x1dc
+ .debug_loc     0x0000000000000000      0x130 ./User/main.o
+ .debug_loc     0x0000000000000130       0xac ./User/system_ch32v20x.o
 
 .debug_aranges  0x0000000000000000       0xb0
  .debug_aranges
@@ -320,22 +307,22 @@ OUTPUT(CH32V203C8T6.elf elf32-littleriscv)
  .debug_aranges
                 0x0000000000000080       0x30 ./Startup/startup_ch32v20x_D6.o
 
-.debug_ranges   0x0000000000000000      0x150
- .debug_ranges  0x0000000000000000       0xf0 ./User/main.o
- .debug_ranges  0x00000000000000f0       0x38 ./User/system_ch32v20x.o
- .debug_ranges  0x0000000000000128       0x28 ./Startup/startup_ch32v20x_D6.o
+.debug_ranges   0x0000000000000000      0x128
+ .debug_ranges  0x0000000000000000       0xc8 ./User/main.o
+ .debug_ranges  0x00000000000000c8       0x38 ./User/system_ch32v20x.o
+ .debug_ranges  0x0000000000000100       0x28 ./Startup/startup_ch32v20x_D6.o
 
-.debug_line     0x0000000000000000     0x13e4
- .debug_line    0x0000000000000000      0xb81 ./User/main.o
- .debug_line    0x0000000000000b81      0x742 ./User/system_ch32v20x.o
- .debug_line    0x00000000000012c3      0x121 ./Startup/startup_ch32v20x_D6.o
+.debug_line     0x0000000000000000      0xf24
+ .debug_line    0x0000000000000000      0x6c1 ./User/main.o
+ .debug_line    0x00000000000006c1      0x742 ./User/system_ch32v20x.o
+ .debug_line    0x0000000000000e03      0x121 ./Startup/startup_ch32v20x_D6.o
 
-.debug_str      0x0000000000000000      0x4b5
- .debug_str     0x0000000000000000      0x3af ./User/main.o
-                                        0x40c (size before relaxing)
- .debug_str     0x00000000000003af       0xd9 ./User/system_ch32v20x.o
+.debug_str      0x0000000000000000      0x449
+ .debug_str     0x0000000000000000      0x343 ./User/main.o
+                                        0x3a6 (size before relaxing)
+ .debug_str     0x0000000000000343       0xd9 ./User/system_ch32v20x.o
                                         0x2f9 (size before relaxing)
- .debug_str     0x0000000000000488       0x2d ./Startup/startup_ch32v20x_D6.o
+ .debug_str     0x000000000000041c       0x2d ./Startup/startup_ch32v20x_D6.o
                                          0x6b (size before relaxing)
 
 .comment        0x0000000000000000       0x33
@@ -343,6 +330,6 @@ OUTPUT(CH32V203C8T6.elf elf32-littleriscv)
                                          0x34 (size before relaxing)
  .comment       0x0000000000000033       0x34 ./User/system_ch32v20x.o
 
-.debug_frame    0x0000000000000000      0x140
- .debug_frame   0x0000000000000000      0x104 ./User/main.o
- .debug_frame   0x0000000000000104       0x3c ./User/system_ch32v20x.o
+.debug_frame    0x0000000000000000      0x12c
+ .debug_frame   0x0000000000000000       0xf0 ./User/main.o
+ .debug_frame   0x00000000000000f0       0x3c ./User/system_ch32v20x.o
