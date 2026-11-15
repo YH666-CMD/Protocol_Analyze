@@ -1,35 +1,62 @@
 /********************************** (C) COPYRIGHT *******************************
  * 文件: main.c
- * 说明: 只读，不解锁、不擦、不写 Flash。
+ * 说明: 上电只读，不碰 Flash 控制器。
+ *       串口收到字母 E 之后，只对 0x08014000 做一次 256B 擦和整页写。
+ *       这一页在参数区，不是慢速代码开头，也不是 32KB 块的起点。
  *
- * 上电就擦 0x08010000。擦除的忙位若不返回，CPU 从 Flash 取指会被挡住，
- * 调试器叫不停。按复位又会立刻再擦一次，所以下载完就认不出芯片。
- * 恢复要用 WCH-LinkUtility 的 Clear All Code Flash - By Power Off，
- * 按提示断电再上电，不要只按复位。
+ * 为什么不在上电时擦
+ *       擦除没完成时，CPU 从 Flash 取指会被挡住，调试器叫不停。
+ *       复位会再擦一次。所以擦除必须由你发一个字母才开始，
+ *       并且等忙的循环放在 RAM 里：忙位不返回时 CPU 还在跑，调试器能连上。
  *
- * 本程序只读六个地址的第一个字，用来确认非零等待区能读。
- *       0  0x08010000  慢速代码区开头
- *       1  0x08014000  参数/统计区开头
- *       2  0x08018000  故障快照区开头
- *       3  0x0801C000  日志区开头
- *       4  0x0802C000  出厂镜像区开头
- *       5  0x08037F00  整片最后一页
- * 空白字应是 0xE339E339。读到别的值只说明那里有旧数据，不是失败。
- * 若某一页读的时候死掉，最后一行停在该页的 A 上。
+ * 六处只读（2026-11-15 已读到全是 E339E339）
+ *       0x08010000  0x08014000  0x08018000
+ *       0x0801C000  0x0802C000  0x08037F00
  *
- * 2026-11-15 本板实测：六处 D 都是 E339E339，1 一直在打。
- *       非零等待区在 96MHz 下可以读。这是掉电全片擦除之后的空值。
- 
+ * 这一页写入：64 个字为 tag|0 .. tag|63，tag = A5014000。
+ *       只用 PAGE_ER / PAGE_PG。不用 4KB 擦，不用 32KB 块擦。
+ *       做完不擦掉图案。
  *
- * 串口：USART1 TX = PA9，115200 8N1。一组打完空大约 1 秒再打。
- *       1  新程序已起来。看到 1 就说明没有再去擦 Flash
- *       A  下面 D 的地址
- *       D  该地址上的 32 位字
- *       H  读的过程中进了 HardFault，后面停住
+ * 2026-11-15 本板实测，发 E 之后 R = 1：
+ *       X = E339E339   擦完第一个字，整页 B = 1
+ *       V = A5014000   写完第一个字，整页 K = 1
+ *       0x08010000、0x08018000、0x0801C000、0x0802C000、0x08037F00
+ *       仍是 E339E339，没有被这页擦除带走。
+ *       结论：96MHz 下，非零等待区可以 256B 擦、整页写、再读回。
+ *       等忙放在 RAM 里，是为了忙位不返回时调试器还能连上。
+ *       其余五页不再单独测，按这一页的结果对待。取指不在本程序里测。
+ *       没收到 E 之前反复打：
+ *       1  程序在跑，还没擦
+ *       A  地址
+ *       D  该地址第一个字
+ *       W  在等字母 E
+ *       收到 E 之后多打：
+ *       G  开始擦 0x08014000。停在 G 且调试器仍能连上，就是忙位没返回
+ *       X  擦完后的第一个字，通过应为 E339E339
+ *       B  1 = 擦完 64 字全是 E339E339
+ *       V  写完后的第一个字，通过应为 A5014000
+ *       K  1 = 写完 64 字全是 tag|序号
+ *       T  等忙超时，但忙位已经掉了，控制器没锁死。数值是当时的 STATR
+ *       R  1 = B 和 K 都是 1
+ *       H  HardFault
  *******************************************************************************/
 #include "ch32v20x.h"
 
-#define S5_N 6u
+#define S5_KEY1     0x45670123u
+#define S5_KEY2     0xCDEF89ABu
+#define S5_LOCK     0x00000080u
+#define S5_FLOCK    0x00008000u
+#define S5_PAGE_ER  0x00020000u
+#define S5_STRT     0x00000040u
+#define S5_PAGE_PG  0x00010000u
+#define S5_PG_STRT  0x00200000u
+#define S5_BSY      0x00000001u
+#define S5_WR_BSY   0x00000002u
+#define S5_ERASED   0xE339E339u
+#define S5_PAGE     0x08014000u
+#define S5_TAG      0xA5014000u
+#define S5_N        6u
+#define S5_SPINS    20000000u
 
 static const uint32_t s_addr[S5_N] = {
     0x08010000u,
@@ -39,6 +66,14 @@ static const uint32_t s_addr[S5_N] = {
     0x0802C000u,
     0x08037F00u,
 };
+
+volatile uint32_t g_s5_done;
+volatile uint32_t g_s5_x;
+volatile uint32_t g_s5_b;
+volatile uint32_t g_s5_v;
+volatile uint32_t g_s5_k;
+volatile uint32_t g_s5_r;
+volatile uint32_t g_s5_t;
 
 static void tx_byte(char c)
 {
@@ -90,22 +125,190 @@ static void tx_val(char m, uint32_t v)
     }
 }
 
+/* 整段在 RAM。忙位置住时不能再从 Flash 取指。
+ * 参数都在寄存器里，循环里不读 Flash 上的常数。
+ * 返回 0：要等的位已经清掉。
+ * 返回非 0：超时，但 bit0 已经是 0，调用者还可以访问 Flash。
+ * bit0 仍为 1 就停在本函数里，不再返回。 */
+static uint32_t ram_wait(volatile uint32_t *statr, uint32_t mask, uint32_t spins)
+    __attribute__((noinline, section(".data")));
+
+static uint32_t ram_wait(volatile uint32_t *statr, uint32_t mask, uint32_t spins)
+{
+    uint32_t n;
+    uint32_t st;
+
+    for (n = 0u; n < spins; n++)
+    {
+        st = *statr;
+        if ((st & mask) == 0u)
+        {
+            return 0u;
+        }
+    }
+    st = *statr;
+    if ((st & S5_BSY) != 0u)
+    {
+        while (1)
+        {
+        }
+    }
+    return st | 1u;
+}
+
 static void uart_init(void)
 {
     RCC->APB2PCENR |= RCC_IOPAEN | RCC_USART1EN;
     GPIOA->CFGHR &= ~(0xFu << 4);
     GPIOA->CFGHR |= (0xBu << 4);
+    GPIOA->CFGHR &= ~(0xFu << 8);
+    GPIOA->CFGHR |= (0x8u << 8);
+    GPIOA->BSHR = (1u << 10);
     USART1->BRR = 833u;
-    USART1->CTLR1 = 0x2008u;
+    USART1->CTLR1 = 0x200Cu;
 }
 
-static void pause(void)
+static uint32_t got_e(void)
+{
+    uint32_t b;
+
+    if ((USART1->STATR & 0x0020u) == 0u)
+    {
+        return 0u;
+    }
+    b = USART1->DATAR & 0xFFu;
+    return (b == (uint32_t)'E') ? 1u : 0u;
+}
+
+/* 等到字母 E 就返回 1。这一秒里没收到就返回 0。字母只在这里读一次。 */
+static uint32_t pause_or_e(void)
 {
     volatile uint32_t n;
 
     for (n = 0u; n < 12000000u; n++)
     {
+        if (got_e() != 0u)
+        {
+            return 1u;
+        }
     }
+    return 0u;
+}
+
+static void flash_unlock(void)
+{
+    if ((FLASH->CTLR & S5_LOCK) != 0u)
+    {
+        FLASH->KEYR = S5_KEY1;
+        FLASH->KEYR = S5_KEY2;
+    }
+    if ((FLASH->CTLR & S5_FLOCK) != 0u)
+    {
+        FLASH->MODEKEYR = S5_KEY1;
+        FLASH->MODEKEYR = S5_KEY2;
+    }
+}
+
+static void flash_lock(void)
+{
+    FLASH->CTLR |= S5_FLOCK;
+    FLASH->CTLR |= S5_LOCK;
+}
+
+static uint32_t page_is(uint32_t expect, uint32_t with_index)
+{
+    uint32_t i;
+    uint32_t want;
+
+    for (i = 0u; i < 64u; i++)
+    {
+        want = (with_index != 0u) ? (expect | i) : expect;
+        if (*(volatile uint32_t *)(S5_PAGE + (i * 4u)) != want)
+        {
+            return 0u;
+        }
+    }
+    return 1u;
+}
+
+/* 返回 0 成功。非 0 时 g_s5_t 已写上，控制器的忙位是清的。 */
+static uint32_t erase_page(void)
+{
+    uint32_t st;
+
+    FLASH->CTLR |= S5_PAGE_ER;
+    FLASH->ADDR = S5_PAGE;
+    FLASH->CTLR |= S5_STRT;
+    st = ram_wait(&FLASH->STATR, S5_BSY, S5_SPINS);
+    FLASH->CTLR &= ~S5_PAGE_ER;
+    if (st != 0u)
+    {
+        g_s5_t = st;
+    }
+    return st;
+}
+
+static uint32_t program_page(void)
+{
+    uint32_t i;
+    uint32_t st;
+
+    FLASH->CTLR |= S5_PAGE_PG;
+    st = ram_wait(&FLASH->STATR, S5_BSY, S5_SPINS);
+    if (st != 0u)
+    {
+        FLASH->CTLR &= ~S5_PAGE_PG;
+        g_s5_t = st;
+        return st;
+    }
+    for (i = 0u; i < 64u; i++)
+    {
+        st = ram_wait(&FLASH->STATR, S5_WR_BSY, S5_SPINS);
+        if (st != 0u)
+        {
+            FLASH->CTLR &= ~S5_PAGE_PG;
+            g_s5_t = st;
+            return st;
+        }
+        *(volatile uint32_t *)(S5_PAGE + (i * 4u)) = S5_TAG | i;
+    }
+    st = ram_wait(&FLASH->STATR, S5_WR_BSY, S5_SPINS);
+    if (st != 0u)
+    {
+        FLASH->CTLR &= ~S5_PAGE_PG;
+        g_s5_t = st;
+        return st;
+    }
+    FLASH->CTLR |= S5_PG_STRT;
+    st = ram_wait(&FLASH->STATR, S5_BSY, S5_SPINS);
+    FLASH->CTLR &= ~S5_PAGE_PG;
+    if (st != 0u)
+    {
+        g_s5_t = st;
+    }
+    return st;
+}
+
+static void do_once(void)
+{
+    tx_mark('G');
+    flash_unlock();
+    if (erase_page() == 0u)
+    {
+        g_s5_x = *(volatile uint32_t *)S5_PAGE;
+        g_s5_b = page_is(S5_ERASED, 0u);
+        if (program_page() == 0u)
+        {
+            g_s5_v = *(volatile uint32_t *)S5_PAGE;
+            g_s5_k = page_is(S5_TAG, 1u);
+        }
+    }
+    flash_lock();
+    if ((g_s5_b != 0u) && (g_s5_k != 0u))
+    {
+        g_s5_r = 1u;
+    }
+    g_s5_done = 1u;
 }
 
 void HardFault_Handler(void)
@@ -120,7 +323,6 @@ int main(void)
 {
     uint32_t i;
     uint32_t n;
-    uint32_t word;
 
     uart_init();
     n = S5_N;
@@ -131,9 +333,31 @@ int main(void)
         for (i = 0u; i < n; i++)
         {
             tx_val('A', s_addr[i]);
-            word = *(volatile uint32_t *)s_addr[i];
-            tx_val('D', word);
+            tx_val('D', *(volatile uint32_t *)s_addr[i]);
         }
-        pause();
+        if (g_s5_done != 0u)
+        {
+            tx_val('X', g_s5_x);
+            tx_val('B', g_s5_b);
+            tx_val('V', g_s5_v);
+            tx_val('K', g_s5_k);
+            if (g_s5_t != 0u)
+            {
+                tx_val('T', g_s5_t);
+            }
+            tx_val('R', g_s5_r);
+        }
+        else
+        {
+            tx_mark('W');
+        }
+        if ((g_s5_done == 0u) && (pause_or_e() != 0u))
+        {
+            do_once();
+        }
+        else if (g_s5_done != 0u)
+        {
+            pause_or_e();
+        }
     }
 }
