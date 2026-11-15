@@ -1,6 +1,6 @@
 ################################################################################
 # MRS Version: 1.9.2
-# ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½Éµï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½à¼­ï¿½ï¿½
+# ×Ô¶¯Éú³ÉµÄÎÄ¼þ¡£²»Òª±à¼­£¡
 ################################################################################
 
 # Add inputs and outputs from these tool invocations to the build variables 
@@ -19,6 +19,6 @@ C_DEPS += \
 
 # Each subdirectory must supply rules for building sources it contributes
 User/%.o: ../User/%.c
-	@	@	riscv-none-embed-gcc -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized  -g -I"D:\desktop\Protocol_Analyze\Protocol_Analyze\bootï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\Core" -I"D:\desktop\Protocol_Analyze\Protocol_Analyze\bootï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\User" -I"D:\desktop\Protocol_Analyze\Protocol_Analyze\bootï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\Peripheral\inc" -std=gnu99 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
+	@	@	riscv-none-embed-gcc -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized  -g -I"D:\desktop\Protocol_Analyze\Protocol_Analyze\bootÒýµ¼Èí¼þ\Core" -I"D:\desktop\Protocol_Analyze\Protocol_Analyze\bootÒýµ¼Èí¼þ\User" -I"D:\desktop\Protocol_Analyze\Protocol_Analyze\bootÒýµ¼Èí¼þ\Peripheral\inc" -std=gnu99 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
 	@	@
 
