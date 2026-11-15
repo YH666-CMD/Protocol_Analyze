@@ -1,0 +1,1 @@
+这里放 Boot 的 hex 或 bin。空着则自动用 boot引导软件\obj 里最新的 hex。
