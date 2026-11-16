@@ -4,22 +4,19 @@
  * 版本               : V1.0.0
  * 日期               : 2021/06/06
  * 说明               : CH32V203C8T6（D6）系统时钟。
- *                      HSE = 8MHz，PLL×12 = 96MHz；HSE 失败时回退 HSI×12。
+ *                      Boot 不升主频。SystemInit 只把 RCC 恢复成复位默认，
+ *                      时钟停在 HSI。App 自己再升频。
 *********************************************************************************
 * 版权所有 (c) 2021 南京沁恒微电子股份有限公司
 *******************************************************************************/
 #include "ch32v20x.h"
 
-uint32_t SystemCoreClock = 96000000;
+uint32_t SystemCoreClock = HSI_VALUE;
 
 __I uint8_t AHBPrescTable[16] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
 
-static void SetSysClock(void);
-static void SetSysClockTo96_HSI_Fallback(void);
-static void SetSysClockTo96_HSE(void);
-
 /*********************************************************************
- * SystemInit — 复位后初始化 RCC，并把系统时钟升到 96MHz
+ * SystemInit — 复位后把 RCC 恢复成默认状态，不升频
  *********************************************************************/
 void SystemInit(void)
 {
@@ -29,7 +26,6 @@ void SystemInit(void)
     RCC->CTLR &= (uint32_t)0xFFFBFFFF;
     RCC->CFGR0 &= (uint32_t)0xFF00FFFF;
     RCC->INTR = 0x009F0000;
-    SetSysClock();
 }
 
 /*********************************************************************
@@ -86,81 +82,4 @@ void SystemCoreClockUpdate(void)
 
     tmp = AHBPrescTable[((RCC->CFGR0 & RCC_HPRE) >> 4)];
     SystemCoreClock >>= tmp;
-}
-
-static void SetSysClock(void)
-{
-    SetSysClockTo96_HSE();
-}
-
-/* HSE 起振失败时，用 HSI×12 升到 96MHz */
-static void SetSysClockTo96_HSI_Fallback(void)
-{
-    EXTEN->EXTEN_CTR |= EXTEN_PLL_HSI_PRE;
-
-    RCC->CFGR0 |= (uint32_t)RCC_HPRE_DIV1;
-    RCC->CFGR0 |= (uint32_t)RCC_PPRE2_DIV1;
-    RCC->CFGR0 |= (uint32_t)RCC_PPRE1_DIV2;
-
-    RCC->CFGR0 &= (uint32_t)((uint32_t)~(RCC_PLLSRC | RCC_PLLXTPRE | RCC_PLLMULL));
-    RCC->CFGR0 |= (uint32_t)(RCC_PLLSRC_HSI_Div2 | RCC_PLLMULL12);
-
-    RCC->CTLR |= RCC_PLLON;
-    while ((RCC->CTLR & RCC_PLLRDY) == 0)
-    {
-    }
-
-    RCC->CFGR0 &= (uint32_t)((uint32_t)~(RCC_SW));
-    RCC->CFGR0 |= (uint32_t)RCC_SW_PLL;
-    while ((RCC->CFGR0 & (uint32_t)RCC_SWS) != (uint32_t)0x08)
-    {
-    }
-}
-
-/* 优先 HSE×12 = 96MHz，失败则回退内部 HSI */
-static void SetSysClockTo96_HSE(void)
-{
-    __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
-
-    RCC->CTLR |= ((uint32_t)RCC_HSEON);
-
-    do
-    {
-        HSEStatus = RCC->CTLR & RCC_HSERDY;
-        StartUpCounter++;
-    } while ((HSEStatus == 0) && (StartUpCounter != HSE_STARTUP_TIMEOUT));
-
-    if ((RCC->CTLR & RCC_HSERDY) != RESET)
-    {
-        HSEStatus = (uint32_t)0x01;
-    }
-    else
-    {
-        HSEStatus = (uint32_t)0x00;
-    }
-
-    if (HSEStatus == (uint32_t)0x01)
-    {
-        RCC->CFGR0 |= (uint32_t)RCC_HPRE_DIV1;
-        RCC->CFGR0 |= (uint32_t)RCC_PPRE2_DIV1;
-        RCC->CFGR0 |= (uint32_t)RCC_PPRE1_DIV2;
-
-        RCC->CFGR0 &= (uint32_t)((uint32_t)~(RCC_PLLSRC | RCC_PLLXTPRE | RCC_PLLMULL));
-        RCC->CFGR0 |= (uint32_t)(RCC_PLLSRC_HSE | RCC_PLLXTPRE_HSE | RCC_PLLMULL12);
-
-        RCC->CTLR |= RCC_PLLON;
-        while ((RCC->CTLR & RCC_PLLRDY) == 0)
-        {
-        }
-
-        RCC->CFGR0 &= (uint32_t)((uint32_t)~(RCC_SW));
-        RCC->CFGR0 |= (uint32_t)RCC_SW_PLL;
-        while ((RCC->CFGR0 & (uint32_t)RCC_SWS) != (uint32_t)0x08)
-        {
-        }
-    }
-    else
-    {
-        SetSysClockTo96_HSI_Fallback();
-    }
 }

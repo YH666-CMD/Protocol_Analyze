@@ -1,15 +1,65 @@
 /********************************** (C) COPYRIGHT *******************************
  * 文件: main.c
- * 说明: Boot 空工程。上电后停在这里。
- *       不做擦写，不打开串口，不注册中断。
- *       SystemInit 会把时钟升到 96MHz。Flash 链接长度是 2KB。
- *       阶段 0 的实测结论在升级规划里。
+ * 说明: Boot。
+ *       看 A 面 0x00000800。
+ *       起始字是擦除值就停住；否则在软件中断里跳过去。
+ *       选 A 还是 B、读标志区，后面再做。
+ *
+ *       g_boot_trace
+ *         1  已进入 main，准备看 A 面
+ *         2  A 面起始字是 0xE339E339，停在这里
+ *         3  起始字有效，准备跳到 g_boot_dest
+ *       g_boot_dest  准备跳的地址。停在 2 的时候也是这个地址。
  *******************************************************************************/
 #include "ch32v20x.h"
 
-int main(void)
+#define BOOT_A_ADDR       ((uint32_t)0x00000800)
+#define BOOT_ERASED_WORD  ((uint32_t)0xE339E339)
+
+volatile uint32_t g_boot_trace;
+volatile uint32_t g_boot_dest;
+
+static volatile uint32_t s_jump_addr;
+
+void SW_Handler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+
+void SW_Handler(void)
 {
+    uint32_t addr;
+
+    addr = s_jump_addr;
+    __asm volatile ("jr %0" : : "r"(addr));
     while (1)
     {
     }
+}
+
+static void boot_jump(uint32_t addr)
+{
+    uint32_t word;
+
+    g_boot_trace = 1;
+    g_boot_dest = addr;
+    word = *(volatile uint32_t *)addr;
+    if (word == BOOT_ERASED_WORD)
+    {
+        g_boot_trace = 2;
+        while (1)
+        {
+        }
+    }
+
+    s_jump_addr = addr;
+    g_boot_trace = 3;
+    FLASH->CTLR |= FLASH_CTLR_LOCK | FLASH_CTLR_FAST_LOCK;
+    NVIC_EnableIRQ(Software_IRQn);
+    NVIC_SetPendingIRQ(Software_IRQn);
+    while (1)
+    {
+    }
+}
+
+int main(void)
+{
+    boot_jump(BOOT_A_ADDR);
 }
