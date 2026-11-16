@@ -260,6 +260,7 @@ SYMBOL TABLE:
 0000b762 g     F .text	00000054 NVIC_Init
 0000b530  w      .text	00000000 PVD_IRQHandler
 00008140 g     F .text	00000020 .hidden __riscv_restore_10
+08010000 g       .debug_info	00000000 _enzw
 20000120 g     O .bss	00000004 g_app_heartbeat_count
 0000a986 g     F .text	00000002 USBD_Status_In
 0000b32c g     F .text	00000002 NMI_Handler
@@ -275,6 +276,7 @@ SYMBOL TABLE:
 20000588 g     O .bss	0000000c g_mcu_uid
 20000120 g       .bss	00000000 _sbss
 00000800 g       *ABS*	00000000 __stack_size
+08010000 g       .debug_info	00000000 _snzw
 0000a374 g     F .text	00000036 USBD_ENDPx_DataUp
 0000b530  w      .text	00000000 USBFS_IRQHandler
 2000015c g     O .bss	00000002 Ep0RxBlks
@@ -5433,7 +5435,7 @@ Disassembly of section .text:
     b152:	4505                	li	a0,1
     b154:	2521                	jal	b75c <NVIC_PriorityGroupConfig>
     b156:	1ffff737          	lui	a4,0x1ffff
-    b15a:	7e872683          	lw	a3,2024(a4) # 1ffff7e8 <_data_lma+0x1fff3984>
+    b15a:	7e872683          	lw	a3,2024(a4) # 1ffff7e8 <_enzw+0x17fef7e8>
     b15e:	ca018793          	addi	a5,gp,-864 # 20000588 <g_mcu_uid>
     b162:	c394                	sw	a3,0(a5)
     b164:	7ec72683          	lw	a3,2028(a4)

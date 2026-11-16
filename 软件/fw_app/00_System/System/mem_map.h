@@ -13,7 +13,11 @@
 #ifndef FW_APP_00_SYSTEM_SYSTEM_MEM_MAP_H_
 #define FW_APP_00_SYSTEM_SYSTEM_MEM_MAP_H_
 
+#if defined(MEM_LD)
+#define MEM_U(x) (x)            /* 链接脚本不认识 u 后缀 */
+#else
 #define MEM_U(x) ((x##u))
+#endif
 
 #define MEM_FLASH_PHY_BASE     MEM_U(0x08000000)   /* 擦写寄存器用 */
 #define MEM_FLASH_RUN_BASE     MEM_U(0x00000000)   /* 零等待区的链接、取指别名 */

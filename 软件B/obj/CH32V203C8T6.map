@@ -1453,6 +1453,7 @@ Memory Configuration
 
 Name             Origin             Length             Attributes
 FLASH            0x0000000000008000 0x0000000000007800 xr
+NZW              0x0000000008010000 0x0000000000004000 xr
 RAM              0x0000000020000000 0x0000000000005000 xrw
 *default*        0x0000000000000000 0xffffffffffffffff
 
@@ -2529,6 +2530,14 @@ END GROUP
                 0x0000000020005000                . = (. + __stack_size)
  *fill*         0x0000000020004800      0x800 
                 0x0000000020005000                PROVIDE (_eusrstack = .)
+
+.nzwtext        0x0000000008010000        0x0
+                0x0000000008010000                PROVIDE (_snzw = .)
+ *(.nzwtext .nzwtext.*)
+ *(.nzwrodata .nzwrodata.*)
+                0x0000000008010000                PROVIDE (_enzw = .)
+                0x0000000000000001                ASSERT ((_enzw >= _snzw), nzw symbols missing)
+                0x0000000000000001                ASSERT (((_enzw - _snzw) <= LENGTH (NZW)), region NZW overflowed)
 OUTPUT(CH32V203C8T6.elf elf32-littleriscv)
 
 .debug_info     0x0000000000000000    0x231d7

@@ -89,7 +89,7 @@ all: CH32V203C8T6.elf secondary-outputs
 
 # 工具调用
 CH32V203C8T6.elf: $(OBJS) $(USER_OBJS)
-	@	@	riscv-none-embed-gcc -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -Wall -Wextra  -g -T "D:\desktop\Protocol_Analyze\Protocol_Analyze\软件B\Ld\Link.ld" -nostartfiles -Xlinker --gc-sections -Wl,-Map,"CH32V203C8T6.map" --specs=nano.specs --specs=nosys.specs  -o "CH32V203C8T6.elf" $(OBJS) $(USER_OBJS) $(LIBS) -lIQmath_RV32 -lprintf
+	@	@	riscv-none-embed-gcc -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -Wall -Wextra  -g -T "D:\desktop\Protocol_Analyze\Protocol_Analyze\软件B\Ld\Link_gen.ld" -nostartfiles -Xlinker --gc-sections -Wl,-Map,"CH32V203C8T6.map" --specs=nano.specs --specs=nosys.specs  -o "CH32V203C8T6.elf" $(OBJS) $(USER_OBJS) $(LIBS) -lIQmath_RV32 -lprintf
 	@	@
 CH32V203C8T6.hexAndbin: CH32V203C8T6.elf
 	@	riscv-none-embed-objcopy -O ihex "CH32V203C8T6.elf"  "CH32V203C8T6.hex" && riscv-none-embed-objcopy -O binary "CH32V203C8T6.elf"  "CH32V203C8T6.bin"
