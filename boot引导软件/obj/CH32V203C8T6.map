@@ -21,7 +21,8 @@ Memory Configuration
 
 Name             Origin             Length             Attributes
 FLASH            0x0000000000000000 0x0000000000000800 xr
-RAM              0x0000000020000000 0x0000000000005000 xrw
+RAM              0x0000000020000000 0x0000000000004f00 xrw
+SHARE            0x0000000020004f00 0x0000000000000100 rw
 *default*        0x0000000000000000 0xffffffffffffffff
 
 Linker script and memory map
@@ -227,13 +228,15 @@ END GROUP
                 [!provide]                        PROVIDE (_end = _ebss)
                 [!provide]                        PROVIDE (end = .)
 
-.stack          0x0000000020004800      0x800
+.stack          0x0000000020004700      0x800
                 [!provide]                        PROVIDE (_heap_end = .)
-                0x0000000020004800                . = ALIGN (0x4)
+                0x0000000020004700                . = ALIGN (0x4)
                 [!provide]                        PROVIDE (_susrstack = .)
-                0x0000000020005000                . = (. + __stack_size)
- *fill*         0x0000000020004800      0x800 
-                0x0000000020005000                PROVIDE (_eusrstack = .)
+                0x0000000020004f00                . = (. + __stack_size)
+ *fill*         0x0000000020004700      0x800 
+                0x0000000020004f00                PROVIDE (_eusrstack = .)
+                0x0000000000000001                ASSERT (((ORIGIN (RAM) + LENGTH (RAM)) == ORIGIN (SHARE)), RAM end is not the share area)
+                0x0000000000000001                ASSERT ((LENGTH (FLASH) == 0x800), Boot flash length is not 2K)
 OUTPUT(CH32V203C8T6.elf elf32-littleriscv)
 
 .debug_info     0x0000000000000000      0x86d

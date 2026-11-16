@@ -1,0 +1,9 @@
+# 命令行 make 时生成链接脚本。分区头用软件工程那一份，不复制。
+LINK_GEN := ../Ld/Link_gen.ld
+LINK_TPL := ../Ld/linker.ld
+MEM_MAP := ../../软件/fw_app/00_System/System/mem_map.h
+
+CH32V203C8T6.elf: $(LINK_GEN)
+
+$(LINK_GEN): $(LINK_TPL) $(MEM_MAP)
+	riscv-none-embed-gcc -E -P -x c -DMEM_LD=1 -I../../软件/fw_app/00_System/System $(LINK_TPL) -o $(LINK_GEN)

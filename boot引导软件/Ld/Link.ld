@@ -1,3 +1,4 @@
+/* 构建已经改用本目录的 Link_gen.ld。模板是 linker.ld，分区数字在软件工程的 mem_map.h。 */
 ENTRY( _start )
 
 __stack_size = 2048;

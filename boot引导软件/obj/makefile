@@ -46,11 +46,16 @@ CH32V203C8T6.siz \
 
 
 # 所有目标
-all: CH32V203C8T6.elf secondary-outputs
+all:
+	$(MAKE) --no-print-directory pre-build
+	$(MAKE) --no-print-directory main-build
+
+# 主构建目标
+main-build: CH32V203C8T6.elf secondary-outputs
 
 # 工具调用
 CH32V203C8T6.elf: $(OBJS) $(USER_OBJS)
-	@	@	riscv-none-embed-gcc -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized  -g -T "D:\desktop\Protocol_Analyze\Protocol_Analyze\boot引导软件\Ld\Link.ld" -nostartfiles -Xlinker --gc-sections -Wl,-Map,"CH32V203C8T6.map" --specs=nano.specs --specs=nosys.specs -o "CH32V203C8T6.elf" $(OBJS) $(USER_OBJS) $(LIBS)
+	@	@	riscv-none-embed-gcc -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized  -g -T "D:\desktop\Protocol_Analyze\Protocol_Analyze\boot引导软件\Ld\Link_gen.ld" -nostartfiles -Xlinker --gc-sections -Wl,-Map,"CH32V203C8T6.map" --specs=nano.specs --specs=nosys.specs -o "CH32V203C8T6.elf" $(OBJS) $(USER_OBJS) $(LIBS)
 	@	@
 CH32V203C8T6.hex: CH32V203C8T6.elf
 	@	riscv-none-embed-objcopy -O ihex "CH32V203C8T6.elf"  "CH32V203C8T6.hex"
@@ -65,8 +70,11 @@ CH32V203C8T6.siz: CH32V203C8T6.elf
 clean:
 	-$(RM) $(ASM_UPPER_DEPS)$(OBJS)$(SECONDARY_FLASH)$(SECONDARY_LIST)$(SECONDARY_SIZE)$(ASM_DEPS)$(S_DEPS)$(S_UPPER_DEPS)$(C_DEPS) CH32V203C8T6.elf
 	-@
+pre-build:
+	-riscv-none-embed-gcc -E -P -x c -DMEM_LD=1 -I"D:/desktop/Protocol_Analyze/Protocol_Analyze/boot引导软件/../软件/fw_app/00_System/System" "D:/desktop/Protocol_Analyze/Protocol_Analyze/boot引导软件/Ld/linker.ld" -o "D:/desktop/Protocol_Analyze/Protocol_Analyze/boot引导软件/Ld/Link_gen.ld"
+	-@
 secondary-outputs: $(SECONDARY_FLASH) $(SECONDARY_LIST) $(SECONDARY_SIZE)
 
-.PHONY: all clean dependents
+.PHONY: all clean dependents main-build pre-build
 
 -include ../makefile.targets

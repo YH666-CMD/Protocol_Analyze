@@ -1,7 +1,7 @@
 /********************************** (C) COPYRIGHT *******************************
  * 文件: main.c
  * 说明: Boot。
- *       看 A 面 0x00000800。
+ *       看 A 面。地址和擦除值在软件工程的 mem_map.h。
  *       起始字是擦除值就停住；否则在软件中断里跳过去。
  *       选 A 还是 B、读标志区，后面再做。
  *
@@ -12,9 +12,10 @@
  *       g_boot_dest  准备跳的地址。停在 2 的时候也是这个地址。
  *******************************************************************************/
 #include "ch32v20x.h"
+#include "mem_map.h"
 
-#define BOOT_A_ADDR       ((uint32_t)0x00000800)
-#define BOOT_ERASED_WORD  ((uint32_t)0xE339E339)
+#define BOOT_A_ADDR       (MEM_FLASH_RUN_BASE + MEM_SLOT_A_OFS)
+#define BOOT_ERASED_WORD  MEM_FLASH_ERASED_WORD
 
 volatile uint32_t g_boot_trace;
 volatile uint32_t g_boot_dest;

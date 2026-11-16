@@ -19,6 +19,6 @@ C_DEPS += \
 
 # Each subdirectory must supply rules for building sources it contributes
 User/%.o: ../User/%.c
-	@	@	riscv-none-embed-gcc -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized  -g -I"D:\desktop\Protocol_Analyze\Protocol_Analyze\boot引导软件\Core" -I"D:\desktop\Protocol_Analyze\Protocol_Analyze\boot引导软件\User" -I"D:\desktop\Protocol_Analyze\Protocol_Analyze\boot引导软件\Peripheral\inc" -std=gnu99 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
+	@	@	riscv-none-embed-gcc -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized  -g -I"D:\desktop\Protocol_Analyze\Protocol_Analyze\boot引导软件\Core" -I"D:\desktop\Protocol_Analyze\Protocol_Analyze\boot引导软件\User" -I"D:\desktop\Protocol_Analyze\Protocol_Analyze\boot引导软件\Peripheral\inc" -I"D:/desktop/Protocol_Analyze/Protocol_Analyze/boot引导软件/../软件/fw_app/00_System/System" -std=gnu99 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
 	@	@
 
