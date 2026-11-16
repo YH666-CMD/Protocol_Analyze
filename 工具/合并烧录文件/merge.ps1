@@ -209,6 +209,10 @@ if ($appFiles.Count -eq 0) {
     $autoApp = Get-NewestHex (Join-Path $Root "软件\obj")
     if ($null -ne $autoApp) { $appFiles = @($autoApp) }
 }
+if ($bFiles.Count -eq 0) {
+    $autoB = Get-NewestHex (Join-Path $Root "软件B\obj")
+    if ($null -ne $autoB) { $bFiles = @($autoB) }
+}
 
 $jobs = New-Object System.Collections.Generic.List[object]
 foreach ($file in $bootFiles) { $jobs.Add($file) | Out-Null }
@@ -219,8 +223,11 @@ foreach ($file in $loose) { $jobs.Add($file) | Out-Null }
 if ($bootFiles.Count -eq 0) {
     throw "没有找到 Boot。请先编译 boot引导软件，或把 hex 放进 放入\boot。"
 }
-if (($appFiles.Count + $bFiles.Count + $loose.Count) -eq 0) {
-    throw "没有找到 App。请先编译 软件，或把 hex 放进 放入\app。"
+if ($appFiles.Count -eq 0) {
+    throw "没有找到 A 面。请先编译 软件，或把 hex 放进 放入\app。"
+}
+if ($bFiles.Count -eq 0) {
+    throw "没有找到 B 面。请先编译 软件B，或把 hex 放进 放入\B。"
 }
 
 $merged = @{}
@@ -251,7 +258,7 @@ if ($overlap.Count -gt 0) {
     Write-Host "没有生成文件。两份内容盖住了同一段："
     Write-Host (Get-RangeText $overlapMap)
     Write-Host ""
-    Write-Host "Boot 应放在 0x08000000，App 应放在 0x08000800。两边都从 0 开始时会重叠。"
+    Write-Host "Boot 在 0x08000000，A 面在 0x08000800，B 面在 0x08008000。从 0 开始链接的面会重叠。"
     exit 1
 }
 

@@ -168,6 +168,92 @@ function Protect-AesCbc([byte[]]$Plain, [byte[]]$Key, [byte[]]$Iv) {
     }
 }
 
+function Write-IntelHex([hashtable]$Map, [string]$Path) {
+    $keys = @($Map.Keys | Sort-Object)
+    $lines = New-Object System.Collections.Generic.List[string]
+    $currentUpper = [uint32]::MaxValue
+    $index = 0
+    while ($index -lt $keys.Count) {
+        $start = [uint32]$keys[$index]
+        $upper = [uint32]($start -shr 16)
+        if ($upper -ne $currentUpper) {
+            $hi = [byte](($upper -shr 8) -band 255)
+            $lo = [byte]($upper -band 255)
+            $body = [byte[]](2, 0, 0, 4, $hi, $lo)
+            $sum = Get-RecordChecksum $body
+            $lines.Add((":02000004{0:X2}{1:X2}{2:X2}" -f $hi, $lo, $sum))
+            $currentUpper = $upper
+        }
+        $chunk = New-Object System.Collections.Generic.List[byte]
+        $addr = $start
+        while (($chunk.Count -lt 16) -and ($index -lt $keys.Count)) {
+            $at = [uint32]$keys[$index]
+            if ($at -ne $addr) { break }
+            if ([uint32]($addr -shr 16) -ne $currentUpper) { break }
+            $chunk.Add([byte]$Map[$at])
+            $index++
+            $addr = [uint32]($addr + [uint32]1)
+        }
+        $low = [uint16]($start -band 0xFFFF)
+        $bodyList = New-Object System.Collections.Generic.List[byte]
+        $bodyList.Add([byte]$chunk.Count)
+        $bodyList.Add([byte](($low -shr 8) -band 255))
+        $bodyList.Add([byte]($low -band 255))
+        $bodyList.Add([byte]0)
+        $bodyList.AddRange($chunk)
+        $bodyBytes = $bodyList.ToArray()
+        $sum = Get-RecordChecksum $bodyBytes
+        $hex = ($bodyBytes | ForEach-Object { "{0:X2}" -f $_ }) -join ""
+        $lines.Add((":{0}{1:X2}" -f $hex, $sum))
+    }
+    $lines.Add(":00000001FF")
+    $utf8 = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllLines($Path, $lines.ToArray(), $utf8)
+}
+
+function Write-IntelHex([hashtable]$Map, [string]$Path) {
+    $keys = @($Map.Keys | Sort-Object)
+    $lines = New-Object System.Collections.Generic.List[string]
+    $currentUpper = [uint32]::MaxValue
+    $index = 0
+    while ($index -lt $keys.Count) {
+        $start = [uint32]$keys[$index]
+        $upper = [uint32]($start -shr 16)
+        if ($upper -ne $currentUpper) {
+            $hi = [byte](($upper -shr 8) -band 255)
+            $lo = [byte]($upper -band 255)
+            $body = [byte[]](2, 0, 0, 4, $hi, $lo)
+            $sum = Get-RecordChecksum $body
+            $lines.Add((":02000004{0:X2}{1:X2}{2:X2}" -f $hi, $lo, $sum))
+            $currentUpper = $upper
+        }
+        $chunk = New-Object System.Collections.Generic.List[byte]
+        $addr = $start
+        while (($chunk.Count -lt 16) -and ($index -lt $keys.Count)) {
+            $at = [uint32]$keys[$index]
+            if ($at -ne $addr) { break }
+            if ([uint32]($addr -shr 16) -ne $currentUpper) { break }
+            $chunk.Add([byte]$Map[$at])
+            $index++
+            $addr = [uint32]($addr + [uint32]1)
+        }
+        $low = [uint16]($start -band 0xFFFF)
+        $bodyList = New-Object System.Collections.Generic.List[byte]
+        $bodyList.Add([byte]$chunk.Count)
+        $bodyList.Add([byte](($low -shr 8) -band 255))
+        $bodyList.Add([byte]($low -band 255))
+        $bodyList.Add([byte]0)
+        $bodyList.AddRange($chunk)
+        $bodyBytes = $bodyList.ToArray()
+        $sum = Get-RecordChecksum $bodyBytes
+        $hex = ($bodyBytes | ForEach-Object { "{0:X2}" -f $_ }) -join ""
+        $lines.Add((":{0}{1:X2}" -f $hex, $sum))
+    }
+    $lines.Add(":00000001FF")
+    $utf8 = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllLines($Path, $lines.ToArray(), $utf8)
+}
+
 function Get-ErasedByte([uint32]$Address) {
     # 小端读出的字是 0xE339E339，内存字节是 39 39 E3 E3
     switch ([int]($Address -band 3)) {
@@ -219,7 +305,6 @@ if ($dropped.Count -gt 0) {
 }
 else {
     $candidates = @(
-        (Join-Path $Here "..\A区拷贝B区工具\输出\AB烧录.hex"),
         (Join-Path $Here "..\合并烧录文件\输出\合并烧录.hex")
     )
     $inputFile = $null
@@ -231,7 +316,7 @@ else {
         }
     }
     if ($null -eq $inputFile) {
-        throw "放入里没有 hex 或 bin，也没有找到 AB烧录.hex 或 合并烧录.hex。"
+        throw "放入里没有 hex 或 bin，也没有找到 合并烧录文件\输出\合并烧录.hex。"
     }
 }
 
@@ -239,6 +324,7 @@ Write-Host ("  " + $inputFile.FullName)
 Write-Host ""
 
 $A0 = [uint32]0x08000800
+$B0 = [uint32]0x08008000
 $SlotLen = 30720
 
 if ($inputFile.Extension -match '(?i)\.bin$') {
@@ -248,17 +334,26 @@ else {
     $map = Read-IntelHex $inputFile.FullName
 }
 
-$slot = Get-SlotPlain $map $A0 $SlotLen
-if ($slot.Filled -eq 0) {
+$slotA = Get-SlotPlain $map $A0 $SlotLen
+$slotB = Get-SlotPlain $map $B0 $SlotLen
+if ($slotA.Filled -eq 0 -or $slotB.Filled -eq 0) {
     Clear-Generated
-    Write-Host "没有生成文件。A 区 0x08000800 .. 0x08007FFF 里没有数据。"
+    Write-Host "没有生成文件。升级包要同时有 A 面和 B 面，Boot 不加密。"
+    if ($slotA.Filled -eq 0) { Write-Host "  A 区 0x08000800 .. 0x08007FFF 里没有数据。" }
+    if ($slotB.Filled -eq 0) { Write-Host "  B 区 0x08008000 .. 0x0800F7FF 里没有数据。" }
     exit 1
 }
 
-$plain = $slot.Plain
-$cipher = Protect-AesCbc $plain $material.Key $material.IV
-if ($cipher.Length -ne $SlotLen) {
-    throw "升级包长度不是 30720 字节。"
+$cipherA = Protect-AesCbc $slotA.Plain $material.Key $material.IV
+$cipherB = Protect-AesCbc $slotB.Plain $material.Key $material.IV
+if (($cipherA.Length -ne $SlotLen) -or ($cipherB.Length -ne $SlotLen)) {
+    throw "升级包每一面都应该是 30720 字节。"
+}
+
+$encrypted = @{}
+for ($i = 0; $i -lt $SlotLen; $i++) {
+    $encrypted[[uint32]($A0 + [uint32]$i)] = $cipherA[$i]
+    $encrypted[[uint32]($B0 + [uint32]$i)] = $cipherB[$i]
 }
 
 if (-not (Test-Path $OutDir)) {
@@ -269,20 +364,20 @@ Clear-Generated
 $ext = ".hex"
 if ($inputFile.Extension -match '(?i)\.bin$') { $ext = ".bin" }
 $outPlain = Join-Path $OutDir ("原始" + $ext)
-$outCipher = Join-Path $OutDir "加密.bin"
+$outCipher = Join-Path $OutDir "加密.hex"
 $outTxt = Join-Path $OutDir "说明.txt"
 Copy-Item $inputFile.FullName $outPlain
-[System.IO.File]::WriteAllBytes($outCipher, $cipher)
+Write-IntelHex $encrypted $outCipher
 
 $report = New-Object System.Collections.Generic.List[string]
 $report.Add("算法 AES-$keyBits-CBC")
 $report.Add("密钥 " + (Format-HexBytes $material.Key))
 $report.Add("向量 " + (Format-HexBytes $material.IV))
-$report.Add("范围 0x08000800 .. 0x08007FFF")
-$report.Add("A区已有数据 $($slot.Filled) 字节")
+$report.Add("每一面单独从这一个向量开始")
 $report.Add("空洞按擦除值 E339E339")
-$report.Add("明文 $SlotLen 字节")
-$report.Add("密文 $SlotLen 字节")
+$report.Add("Boot 不在升级包里")
+$report.Add("A 0x08000800 .. 0x08007FFF  原有 $($slotA.Filled) 字节  密文 $SlotLen 字节")
+$report.Add("B 0x08008000 .. 0x0800F7FF  原有 $($slotB.Filled) 字节  密文 $SlotLen 字节")
 $report.Add("")
 $report.Add($inputFile.FullName)
 $utf8 = New-Object System.Text.UTF8Encoding $true
@@ -291,7 +386,8 @@ $utf8 = New-Object System.Text.UTF8Encoding $true
 Write-Host "已生成："
 Write-Host ("  " + $outPlain)
 Write-Host ("  " + $outCipher)
-Write-Host ("算法 AES-$keyBits-CBC，升级包 $SlotLen 字节。A 区原有 $($slot.Filled) 字节，其余按擦除值 E339E339。")
+Write-Host ("算法 AES-$keyBits-CBC。A、B 各 $SlotLen 字节，地址还在原来的位置。Boot 没有放进升级包。")
+Write-Host ("A 区原有 $($slotA.Filled) 字节，B 区原有 $($slotB.Filled) 字节，空洞按擦除值 E339E339。")
 Write-Host ""
-Write-Host "烧录用原始文件。加密.bin 是升级包。"
+Write-Host "烧录用原始文件。加密.hex 是升级包，上位机按地址整份发出去。"
 exit 0
