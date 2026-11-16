@@ -1,4 +1,4 @@
 User/main.o: ../User/main.c \
- D:\desktop\Protocol_Analyze\Protocol_Analyze\软件\fw_app\01_Port\port/port.h
+ D:\desktop\Protocol_Analyze\Protocol_Analyze\软件B\fw_app\01_Port\port/port.h
 
-D:\desktop\Protocol_Analyze\Protocol_Analyze\软件\fw_app\01_Port\port/port.h:
+D:\desktop\Protocol_Analyze\Protocol_Analyze\软件B\fw_app\01_Port\port/port.h:

@@ -95,4 +95,8 @@ extern const plat_hook_t plat_hook_evt_full;
 extern const plat_hook_t plat_hook_log_flash;
 extern const plat_hook_t plat_hook_task_fail;
 
+/* 慢速区段。不放进 mem_map.h，那份头以后要给链接脚本预处理。 */
+#define NZW_FUNC    __attribute__((section(".nzwtext")))
+#define NZW_RODATA  __attribute__((section(".nzwrodata")))
+
 #endif /* FW_APP_00_SYSTEM_SYSTEM_PLATFORM_H_ */

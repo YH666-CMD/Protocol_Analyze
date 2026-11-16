@@ -55,6 +55,9 @@
 #define LOG_DAILY_DEPTH               8u        /*日常日志在 RAM 里最多攒多少条*/
 #define LOG_EMERGENCY_FLAG            0xA5u     /*复位后是否需要写FLASH的标志位，目前在bss段会被清，后续需要加到额外划分ram区间里*/
 
+#define APP_SLOT                      0u        /* 0：本工程链接在 A 面。软件B 里是 1 */
+#include "mem_map.h"
+
 #if (SCHED_ID_COUNT > SCHED_TASK_MAX)
 #error "SCHED_ID_COUNT exceeds SCHED_TASK_MAX"
 #endif
