@@ -5,7 +5,8 @@ MEMORY
 {
  FLASH (rx) : ORIGIN = ((0x00000000) + ((0x0000) + ((2) * (1024)))), LENGTH = ((30) * (1024))
  NZW (rx) : ORIGIN = (0x08000000) + (0x10000), LENGTH = ((16) * (1024))
- RAM (xrw) : ORIGIN = (0x20000000), LENGTH = ((20) * (1024))
+ RAM (xrw) : ORIGIN = (0x20000000), LENGTH = ((20) * (1024)) - (256)
+ SHARE (rw) : ORIGIN = ((0x20000000) + ((20) * (1024)) - (256)), LENGTH = (256)
 }
 SECTIONS
 {
@@ -126,6 +127,12 @@ SECTIONS
         . = . + __stack_size;
         PROVIDE( _eusrstack = .);
     } >RAM
+ .share ((0x20000000) + ((20) * (1024)) - (256)) (NOLOAD) :
+ {
+  KEEP(*(.share .share.*))
+ } >SHARE
+ ASSERT(ORIGIN(RAM) + LENGTH(RAM) == ORIGIN(SHARE), "RAM end is not the share area")
+ ASSERT(SIZEOF(.share) <= LENGTH(SHARE), "region SHARE overflowed")
  .nzwtext :
  {
   PROVIDE(_snzw = .);

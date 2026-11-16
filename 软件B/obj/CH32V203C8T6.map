@@ -1454,7 +1454,8 @@ Memory Configuration
 Name             Origin             Length             Attributes
 FLASH            0x0000000000008000 0x0000000000007800 xr
 NZW              0x0000000008010000 0x0000000000004000 xr
-RAM              0x0000000020000000 0x0000000000005000 xrw
+RAM              0x0000000020000000 0x0000000000004f00 xrw
+SHARE            0x0000000020004f00 0x0000000000000100 rw
 *default*        0x0000000000000000 0xffffffffffffffff
 
 Linker script and memory map
@@ -1564,7 +1565,7 @@ END GROUP
  .vector        0x0000000000008004       0xfc ./Startup/startup_ch32v20x_D6.o
                 0x0000000000008100                . = ALIGN (0x40)
 
-.text           0x0000000000008100     0x3d64
+.text           0x0000000000008100     0x3e18
                 0x0000000000008100                . = ALIGN (0x4)
  *(.text)
  .text          0x0000000000008100       0x60 e:/wch_ide_yh/mounriver_studio/toolchain/risc-v embedded gcc/bin/../lib/gcc/riscv-none-embed/8.2.0/rv32imacxw/ilp32\libgcc.a(save-restore.o)
@@ -1667,634 +1668,638 @@ END GROUP
                 0x0000000000008b34       0xb4 ./fw_app/04_Components/ring_buffer/ring_buffer.o
  .text.rb_write_buf
                 0x0000000000008be8       0x62 ./fw_app/04_Components/ring_buffer/ring_buffer.o
+ .text.log_em_digest
+                0x0000000000008c4a       0x64 ./fw_app/04_Components/log/log.o
+ .text.log_em_ok
+                0x0000000000008cae       0x2e ./fw_app/04_Components/log/log.o
  .text.log_init
-                0x0000000000008c4a        0x8 ./fw_app/04_Components/log/log.o
+                0x0000000000008cdc        0x8 ./fw_app/04_Components/log/log.o
  .text.log_daily
-                0x0000000000008c52       0x16 ./fw_app/04_Components/log/log.o
- .text.log_emergency
-                0x0000000000008c68       0x1a ./fw_app/04_Components/log/log.o
+                0x0000000000008ce4       0x16 ./fw_app/04_Components/log/log.o
  .text.log_stuck
-                0x0000000000008c82       0x42 ./fw_app/04_Components/log/log.o
+                0x0000000000008cfa       0x4e ./fw_app/04_Components/log/log.o
  .text.log_flush_daily
-                0x0000000000008cc4        0xc ./fw_app/04_Components/log/log.o
+                0x0000000000008d48        0xc ./fw_app/04_Components/log/log.o
  .text.log_flush_emergency
-                0x0000000000008cd0       0x12 ./fw_app/04_Components/log/log.o
+                0x0000000000008d54       0x10 ./fw_app/04_Components/log/log.o
  .text.log_boot
-                0x0000000000008ce2       0x1a ./fw_app/04_Components/log/log.o
+                0x0000000000008d64       0x14 ./fw_app/04_Components/log/log.o
+ .text.log_emergency
+                0x0000000000008d78       0x28 ./fw_app/04_Components/log/log.o
  .text.log_stuck_clear
-                0x0000000000008cfc       0x1e ./fw_app/04_Components/log/log.o
+                0x0000000000008da0       0x26 ./fw_app/04_Components/log/log.o
  .text.frame_pack
-                0x0000000000008d1a       0x86 ./fw_app/04_Components/frame/frame.o
+                0x0000000000008dc6       0x86 ./fw_app/04_Components/frame/frame.o
  .text.frame_unpack
-                0x0000000000008da0       0x7e ./fw_app/04_Components/frame/frame.o
+                0x0000000000008e4c       0x7e ./fw_app/04_Components/frame/frame.o
  .text.evt_init
-                0x0000000000008e1e       0x54 ./fw_app/04_Components/evt/evt.o
+                0x0000000000008eca       0x54 ./fw_app/04_Components/evt/evt.o
  .text.evt_send
-                0x0000000000008e72       0x88 ./fw_app/04_Components/evt/evt.o
+                0x0000000000008f1e       0x88 ./fw_app/04_Components/evt/evt.o
  .text.evt_take
-                0x0000000000008efa       0x74 ./fw_app/04_Components/evt/evt.o
+                0x0000000000008fa6       0x74 ./fw_app/04_Components/evt/evt.o
  .text.crc_reflect
-                0x0000000000008f6e       0x1c ./fw_app/04_Components/CRC/crc.o
+                0x000000000000901a       0x1c ./fw_app/04_Components/CRC/crc.o
  .text.crc_calc
-                0x0000000000008f8a       0xca ./fw_app/04_Components/CRC/crc.o
+                0x0000000000009036       0xca ./fw_app/04_Components/CRC/crc.o
  .text.crc8_calc
-                0x0000000000009054       0x18 ./fw_app/04_Components/CRC/crc.o
+                0x0000000000009100       0x18 ./fw_app/04_Components/CRC/crc.o
  .text.crc8_maxim_calc
-                0x000000000000906c       0x18 ./fw_app/04_Components/CRC/crc.o
+                0x0000000000009118       0x18 ./fw_app/04_Components/CRC/crc.o
  .text.crc16_modbus_calc
-                0x0000000000009084       0x18 ./fw_app/04_Components/CRC/crc.o
+                0x0000000000009130       0x18 ./fw_app/04_Components/CRC/crc.o
  .text.crc16_ccitt_calc
-                0x000000000000909c       0x18 ./fw_app/04_Components/CRC/crc.o
+                0x0000000000009148       0x18 ./fw_app/04_Components/CRC/crc.o
  .text.crc16_xmodem_calc
-                0x00000000000090b4       0x18 ./fw_app/04_Components/CRC/crc.o
+                0x0000000000009160       0x18 ./fw_app/04_Components/CRC/crc.o
  .text.crc32_calc
-                0x00000000000090cc       0x14 ./fw_app/04_Components/CRC/crc.o
+                0x0000000000009178       0x14 ./fw_app/04_Components/CRC/crc.o
  .text.crc32_mpeg2_calc
-                0x00000000000090e0       0x14 ./fw_app/04_Components/CRC/crc.o
+                0x000000000000918c       0x14 ./fw_app/04_Components/CRC/crc.o
  .text.Standard_GetConfiguration
-                0x00000000000090f4       0x22 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
-                0x00000000000090f4                Standard_GetConfiguration
+                0x00000000000091a0       0x22 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+                0x00000000000091a0                Standard_GetConfiguration
  .text.Standard_GetInterface
-                0x0000000000009116       0x22 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
-                0x0000000000009116                Standard_GetInterface
+                0x00000000000091c2       0x22 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+                0x00000000000091c2                Standard_GetInterface
  .text.Standard_GetStatus
-                0x0000000000009138       0x90 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
-                0x0000000000009138                Standard_GetStatus
+                0x00000000000091e4       0x90 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+                0x00000000000091e4                Standard_GetStatus
  .text.DataStageIn
-                0x00000000000091c8       0xb0 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+                0x0000000000009274       0xb0 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
  .text.Standard_SetConfiguration
-                0x0000000000009278       0x2e ./fw_app/03_Driver/usb/vendor/src/usb_core.o
-                0x0000000000009278                Standard_SetConfiguration
+                0x0000000000009324       0x2e ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+                0x0000000000009324                Standard_SetConfiguration
  .text.Standard_SetInterface
-                0x00000000000092a6       0x4a ./fw_app/03_Driver/usb/vendor/src/usb_core.o
-                0x00000000000092a6                Standard_SetInterface
+                0x0000000000009352       0x4a ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+                0x0000000000009352                Standard_SetInterface
  .text.Standard_ClearFeature
-                0x00000000000092f0      0x11c ./fw_app/03_Driver/usb/vendor/src/usb_core.o
-                0x00000000000092f0                Standard_ClearFeature
+                0x000000000000939c      0x11c ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+                0x000000000000939c                Standard_ClearFeature
  .text.Standard_SetEndPointFeature
-                0x000000000000940c       0xbc ./fw_app/03_Driver/usb/vendor/src/usb_core.o
-                0x000000000000940c                Standard_SetEndPointFeature
+                0x00000000000094b8       0xbc ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+                0x00000000000094b8                Standard_SetEndPointFeature
  .text.Standard_SetDeviceFeature
-                0x00000000000094c8       0x1e ./fw_app/03_Driver/usb/vendor/src/usb_core.o
-                0x00000000000094c8                Standard_SetDeviceFeature
+                0x0000000000009574       0x1e ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+                0x0000000000009574                Standard_SetDeviceFeature
  .text.Standard_GetDescriptorData
-                0x00000000000094e6       0x18 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
-                0x00000000000094e6                Standard_GetDescriptorData
+                0x0000000000009592       0x18 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+                0x0000000000009592                Standard_GetDescriptorData
  .text.Post0_Process
-                0x00000000000094fe       0x34 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
-                0x00000000000094fe                Post0_Process
+                0x00000000000095aa       0x34 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+                0x00000000000095aa                Post0_Process
  .text.Setup0_Process
-                0x0000000000009532      0x2f4 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
-                0x0000000000009532                Setup0_Process
+                0x00000000000095de      0x2f4 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+                0x00000000000095de                Setup0_Process
  .text.Out0_Process
-                0x0000000000009826       0xca ./fw_app/03_Driver/usb/vendor/src/usb_core.o
-                0x0000000000009826                Out0_Process
+                0x00000000000098d2       0xca ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+                0x00000000000098d2                Out0_Process
  .text.SetDeviceAddress
-                0x00000000000098f0       0x4a ./fw_app/03_Driver/usb/vendor/src/usb_core.o
-                0x00000000000098f0                SetDeviceAddress
+                0x000000000000999c       0x4a ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+                0x000000000000999c                SetDeviceAddress
  .text.In0_Process
-                0x000000000000993a       0x5c ./fw_app/03_Driver/usb/vendor/src/usb_core.o
-                0x000000000000993a                In0_Process
+                0x00000000000099e6       0x5c ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+                0x00000000000099e6                In0_Process
  .text.NOP_Process
-                0x0000000000009996        0x2 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
-                0x0000000000009996                NOP_Process
+                0x0000000000009a42        0x2 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+                0x0000000000009a42                NOP_Process
  .text.USB_Init
-                0x0000000000009998       0x32 ./fw_app/03_Driver/usb/vendor/src/usb_init.o
-                0x0000000000009998                USB_Init
- .text.CTR_LP   0x00000000000099ca      0x3ba ./fw_app/03_Driver/usb/vendor/src/usb_int.o
-                0x00000000000099ca                CTR_LP
+                0x0000000000009a44       0x32 ./fw_app/03_Driver/usb/vendor/src/usb_init.o
+                0x0000000000009a44                USB_Init
+ .text.CTR_LP   0x0000000000009a76      0x3ba ./fw_app/03_Driver/usb/vendor/src/usb_int.o
+                0x0000000000009a76                CTR_LP
  .text.UserToPMABufferCopy
-                0x0000000000009d84       0x24 ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
-                0x0000000000009d84                UserToPMABufferCopy
+                0x0000000000009e30       0x24 ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
+                0x0000000000009e30                UserToPMABufferCopy
  .text.PMAToUserBufferCopy
-                0x0000000000009da8       0x1e ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
-                0x0000000000009da8                PMAToUserBufferCopy
+                0x0000000000009e54       0x1e ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
+                0x0000000000009e54                PMAToUserBufferCopy
  .text.SetBTABLE
-                0x0000000000009dc6       0x10 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
-                0x0000000000009dc6                SetBTABLE
+                0x0000000000009e72       0x10 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+                0x0000000000009e72                SetBTABLE
  .text.SetEPType
-                0x0000000000009dd6       0x20 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
-                0x0000000000009dd6                SetEPType
+                0x0000000000009e82       0x20 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+                0x0000000000009e82                SetEPType
  .text.SetEPTxStatus
-                0x0000000000009df6       0x48 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
-                0x0000000000009df6                SetEPTxStatus
+                0x0000000000009ea2       0x48 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+                0x0000000000009ea2                SetEPTxStatus
  .text.SetEPRxStatus
-                0x0000000000009e3e       0x56 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
-                0x0000000000009e3e                SetEPRxStatus
+                0x0000000000009eea       0x56 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+                0x0000000000009eea                SetEPRxStatus
  .text.SetEPRxValid
-                0x0000000000009e94       0x42 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
-                0x0000000000009e94                SetEPRxValid
+                0x0000000000009f40       0x42 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+                0x0000000000009f40                SetEPRxValid
  .text.ClearEP_KIND
-                0x0000000000009ed6       0x26 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
-                0x0000000000009ed6                ClearEP_KIND
+                0x0000000000009f82       0x26 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+                0x0000000000009f82                ClearEP_KIND
  .text.Clear_Status_Out
-                0x0000000000009efc        0xa ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
-                0x0000000000009efc                Clear_Status_Out
+                0x0000000000009fa8        0xa ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+                0x0000000000009fa8                Clear_Status_Out
  .text.ClearDTOG_RX
-                0x0000000000009f06       0x34 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
-                0x0000000000009f06                ClearDTOG_RX
+                0x0000000000009fb2       0x34 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+                0x0000000000009fb2                ClearDTOG_RX
  .text.ClearDTOG_TX
-                0x0000000000009f3a       0x30 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
-                0x0000000000009f3a                ClearDTOG_TX
+                0x0000000000009fe6       0x30 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+                0x0000000000009fe6                ClearDTOG_TX
  .text.SetEPTxAddr
-                0x0000000000009f6a       0x20 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
-                0x0000000000009f6a                SetEPTxAddr
+                0x000000000000a016       0x20 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+                0x000000000000a016                SetEPTxAddr
  .text.SetEPRxAddr
-                0x0000000000009f8a       0x22 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
-                0x0000000000009f8a                SetEPRxAddr
+                0x000000000000a036       0x22 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+                0x000000000000a036                SetEPRxAddr
  .text.GetEPTxAddr
-                0x0000000000009fac       0x1c ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
-                0x0000000000009fac                GetEPTxAddr
+                0x000000000000a058       0x1c ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+                0x000000000000a058                GetEPTxAddr
  .text.GetEPRxAddr
-                0x0000000000009fc8       0x1e ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
-                0x0000000000009fc8                GetEPRxAddr
+                0x000000000000a074       0x1e ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+                0x000000000000a074                GetEPRxAddr
  .text.SetEPTxCount
-                0x0000000000009fe6       0x1e ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
-                0x0000000000009fe6                SetEPTxCount
+                0x000000000000a092       0x1e ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+                0x000000000000a092                SetEPTxCount
  .text.SetEPRxCount
-                0x000000000000a004       0x82 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
-                0x000000000000a004                SetEPRxCount
+                0x000000000000a0b0       0x82 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+                0x000000000000a0b0                SetEPRxCount
  .text.GetEPRxCount
-                0x000000000000a086       0x22 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
-                0x000000000000a086                GetEPRxCount
+                0x000000000000a132       0x22 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+                0x000000000000a132                GetEPRxCount
  .text.ByteSwap
-                0x000000000000a0a8        0xe ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
-                0x000000000000a0a8                ByteSwap
+                0x000000000000a154        0xe ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+                0x000000000000a154                ByteSwap
  .text.USB_SIL_Init
-                0x000000000000a0b6       0x20 ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
-                0x000000000000a0b6                USB_SIL_Init
+                0x000000000000a162       0x20 ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
+                0x000000000000a162                USB_SIL_Init
  .text.USB_SIL_Write
-                0x000000000000a0d6       0x28 ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
-                0x000000000000a0d6                USB_SIL_Write
+                0x000000000000a182       0x2a ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
+                0x000000000000a182                USB_SIL_Write
  .text.usb_state
-                0x000000000000a0fe        0x6 ./fw_app/03_Driver/usb/drv_usb.o
+                0x000000000000a1ac        0x6 ./fw_app/03_Driver/usb/drv_usb.o
  .text.usb_on_rx_set
-                0x000000000000a104        0xe ./fw_app/03_Driver/usb/drv_usb.o
+                0x000000000000a1b2        0xe ./fw_app/03_Driver/usb/drv_usb.o
  .text.usb_tx_ready
-                0x000000000000a112       0x1e ./fw_app/03_Driver/usb/drv_usb.o
- .text.usb_tx   0x000000000000a130       0x44 ./fw_app/03_Driver/usb/drv_usb.o
+                0x000000000000a1c0       0x1e ./fw_app/03_Driver/usb/drv_usb.o
+ .text.usb_tx   0x000000000000a1de       0x44 ./fw_app/03_Driver/usb/drv_usb.o
  .text.usb_line_get
-                0x000000000000a174       0x30 ./fw_app/03_Driver/usb/drv_usb.o
+                0x000000000000a222       0x30 ./fw_app/03_Driver/usb/drv_usb.o
  .text.usb_init
-                0x000000000000a1a4       0x7e ./fw_app/03_Driver/usb/drv_usb.o
+                0x000000000000a252       0x7e ./fw_app/03_Driver/usb/drv_usb.o
  .text.USBWakeUp_IRQHandler
-                0x000000000000a222        0xc ./fw_app/03_Driver/usb/drv_usb.o
-                0x000000000000a222                USBWakeUp_IRQHandler
+                0x000000000000a2d0        0xc ./fw_app/03_Driver/usb/drv_usb.o
+                0x000000000000a2d0                USBWakeUp_IRQHandler
  .text.USB_LP_CAN1_RX0_IRQHandler
-                0x000000000000a22e       0x1e ./fw_app/03_Driver/usb/drv_usb.o
-                0x000000000000a22e                USB_LP_CAN1_RX0_IRQHandler
+                0x000000000000a2dc       0x1e ./fw_app/03_Driver/usb/drv_usb.o
+                0x000000000000a2dc                USB_LP_CAN1_RX0_IRQHandler
  .text.USB_Port_Set
-                0x000000000000a24c       0xb2 ./fw_app/03_Driver/usb/drv_usb.o
-                0x000000000000a24c                USB_Port_Set
+                0x000000000000a2fa       0xb2 ./fw_app/03_Driver/usb/drv_usb.o
+                0x000000000000a2fa                USB_Port_Set
  .text.Enter_LowPowerMode
-                0x000000000000a2fe        0x8 ./fw_app/03_Driver/usb/drv_usb.o
-                0x000000000000a2fe                Enter_LowPowerMode
+                0x000000000000a3ac        0x8 ./fw_app/03_Driver/usb/drv_usb.o
+                0x000000000000a3ac                Enter_LowPowerMode
  .text.Leave_LowPowerMode
-                0x000000000000a306       0x12 ./fw_app/03_Driver/usb/drv_usb.o
-                0x000000000000a306                Leave_LowPowerMode
+                0x000000000000a3b4       0x12 ./fw_app/03_Driver/usb/drv_usb.o
+                0x000000000000a3b4                Leave_LowPowerMode
  .text.EP1_IN_Callback
-                0x000000000000a318        0x2 ./fw_app/03_Driver/usb/usb_endp.o
-                0x000000000000a318                EP1_IN_Callback
+                0x000000000000a3c6        0x2 ./fw_app/03_Driver/usb/usb_endp.o
+                0x000000000000a3c6                EP1_IN_Callback
  .text.EP2_OUT_Callback
-                0x000000000000a31a       0x48 ./fw_app/03_Driver/usb/usb_endp.o
-                0x000000000000a31a                EP2_OUT_Callback
+                0x000000000000a3c8       0x4a ./fw_app/03_Driver/usb/usb_endp.o
+                0x000000000000a3c8                EP2_OUT_Callback
  .text.EP3_IN_Callback
-                0x000000000000a362        0x6 ./fw_app/03_Driver/usb/usb_endp.o
-                0x000000000000a362                EP3_IN_Callback
+                0x000000000000a412        0x6 ./fw_app/03_Driver/usb/usb_endp.o
+                0x000000000000a412                EP3_IN_Callback
  .text.usb_ep3_room
-                0x000000000000a368        0xc ./fw_app/03_Driver/usb/usb_endp.o
-                0x000000000000a368                usb_ep3_room
+                0x000000000000a418        0xc ./fw_app/03_Driver/usb/usb_endp.o
+                0x000000000000a418                usb_ep3_room
  .text.USBD_ENDPx_DataUp
-                0x000000000000a374       0x36 ./fw_app/03_Driver/usb/usb_endp.o
-                0x000000000000a374                USBD_ENDPx_DataUp
+                0x000000000000a424       0x36 ./fw_app/03_Driver/usb/usb_endp.o
+                0x000000000000a424                USBD_ENDPx_DataUp
  .text.USB_Istr
-                0x000000000000a3aa      0x246 ./fw_app/03_Driver/usb/usb_istr.o
-                0x000000000000a3aa                USB_Istr
+                0x000000000000a45a      0x246 ./fw_app/03_Driver/usb/usb_istr.o
+                0x000000000000a45a                USB_Istr
  .text.USBD_SetConfiguration
-                0x000000000000a5f0       0x14 ./fw_app/03_Driver/usb/usb_prop.o
-                0x000000000000a5f0                USBD_SetConfiguration
+                0x000000000000a6a0       0x14 ./fw_app/03_Driver/usb/usb_prop.o
+                0x000000000000a6a0                USBD_SetConfiguration
  .text.USBD_SetDeviceAddress
-                0x000000000000a604        0x8 ./fw_app/03_Driver/usb/usb_prop.o
-                0x000000000000a604                USBD_SetDeviceAddress
+                0x000000000000a6b4        0x8 ./fw_app/03_Driver/usb/usb_prop.o
+                0x000000000000a6b4                USBD_SetDeviceAddress
  .text.USBD_SetDeviceFeature
-                0x000000000000a60c        0x2 ./fw_app/03_Driver/usb/usb_prop.o
-                0x000000000000a60c                USBD_SetDeviceFeature
+                0x000000000000a6bc        0x2 ./fw_app/03_Driver/usb/usb_prop.o
+                0x000000000000a6bc                USBD_SetDeviceFeature
  .text.USBD_Get_Interface_Setting
-                0x000000000000a60e       0x10 ./fw_app/03_Driver/usb/usb_prop.o
-                0x000000000000a60e                USBD_Get_Interface_Setting
+                0x000000000000a6be       0x10 ./fw_app/03_Driver/usb/usb_prop.o
+                0x000000000000a6be                USBD_Get_Interface_Setting
  .text.usb_line_copy
-                0x000000000000a61e       0x12 ./fw_app/03_Driver/usb/usb_prop.o
+                0x000000000000a6ce       0x12 ./fw_app/03_Driver/usb/usb_prop.o
  .text.USBD_NoData_Setup
-                0x000000000000a630       0x24 ./fw_app/03_Driver/usb/usb_prop.o
-                0x000000000000a630                USBD_NoData_Setup
+                0x000000000000a6e0       0x24 ./fw_app/03_Driver/usb/usb_prop.o
+                0x000000000000a6e0                USBD_NoData_Setup
  .text.USBD_Reset
-                0x000000000000a654      0x254 ./fw_app/03_Driver/usb/usb_prop.o
-                0x000000000000a654                USBD_Reset
+                0x000000000000a704      0x254 ./fw_app/03_Driver/usb/usb_prop.o
+                0x000000000000a704                USBD_Reset
  .text.USBD_GetDeviceDescriptor
-                0x000000000000a8a8       0x10 ./fw_app/03_Driver/usb/usb_prop.o
-                0x000000000000a8a8                USBD_GetDeviceDescriptor
+                0x000000000000a958       0x10 ./fw_app/03_Driver/usb/usb_prop.o
+                0x000000000000a958                USBD_GetDeviceDescriptor
  .text.USBD_GetConfigDescriptor
-                0x000000000000a8b8       0x14 ./fw_app/03_Driver/usb/usb_prop.o
-                0x000000000000a8b8                USBD_GetConfigDescriptor
+                0x000000000000a968       0x14 ./fw_app/03_Driver/usb/usb_prop.o
+                0x000000000000a968                USBD_GetConfigDescriptor
  .text.USBD_GetStringDescriptor
-                0x000000000000a8cc       0x28 ./fw_app/03_Driver/usb/usb_prop.o
-                0x000000000000a8cc                USBD_GetStringDescriptor
+                0x000000000000a97c       0x28 ./fw_app/03_Driver/usb/usb_prop.o
+                0x000000000000a97c                USBD_GetStringDescriptor
  .text.USBD_init
-                0x000000000000a8f4       0x8e ./fw_app/03_Driver/usb/usb_prop.o
-                0x000000000000a8f4                USBD_init
+                0x000000000000a9a4       0x8e ./fw_app/03_Driver/usb/usb_prop.o
+                0x000000000000a9a4                USBD_init
  .text.USBD_Status_Out
-                0x000000000000a982        0x2 ./fw_app/03_Driver/usb/usb_prop.o
-                0x000000000000a982                USBD_Status_Out
+                0x000000000000aa32        0x2 ./fw_app/03_Driver/usb/usb_prop.o
+                0x000000000000aa32                USBD_Status_Out
  .text.USBD_ClearFeature
-                0x000000000000a984        0x2 ./fw_app/03_Driver/usb/usb_prop.o
-                0x000000000000a984                USBD_ClearFeature
+                0x000000000000aa34        0x2 ./fw_app/03_Driver/usb/usb_prop.o
+                0x000000000000aa34                USBD_ClearFeature
  .text.USBD_Status_In
-                0x000000000000a986        0x2 ./fw_app/03_Driver/usb/usb_prop.o
-                0x000000000000a986                USBD_Status_In
+                0x000000000000aa36        0x2 ./fw_app/03_Driver/usb/usb_prop.o
+                0x000000000000aa36                USBD_Status_In
  .text.USBD_Data_Setup
-                0x000000000000a988       0x30 ./fw_app/03_Driver/usb/usb_prop.o
-                0x000000000000a988                USBD_Data_Setup
+                0x000000000000aa38       0x30 ./fw_app/03_Driver/usb/usb_prop.o
+                0x000000000000aa38                USBD_Data_Setup
  .text.usb_cdc_line_get
-                0x000000000000a9b8       0x1e ./fw_app/03_Driver/usb/usb_prop.o
-                0x000000000000a9b8                usb_cdc_line_get
+                0x000000000000aa68       0x1e ./fw_app/03_Driver/usb/usb_prop.o
+                0x000000000000aa68                usb_cdc_line_get
  .text.usb_rx_hook_set
-                0x000000000000a9d6        0x6 ./fw_app/03_Driver/usb/usb_prop.o
-                0x000000000000a9d6                usb_rx_hook_set
+                0x000000000000aa86        0x6 ./fw_app/03_Driver/usb/usb_prop.o
+                0x000000000000aa86                usb_rx_hook_set
  .text.usb_rx_hook_get
-                0x000000000000a9dc        0x6 ./fw_app/03_Driver/usb/usb_prop.o
-                0x000000000000a9dc                usb_rx_hook_get
- .text.PowerOn  0x000000000000a9e2       0x2a ./fw_app/03_Driver/usb/usb_pwr.o
-                0x000000000000a9e2                PowerOn
- .text.Suspend  0x000000000000aa0c       0xba ./fw_app/03_Driver/usb/usb_pwr.o
-                0x000000000000aa0c                Suspend
+                0x000000000000aa8c        0x6 ./fw_app/03_Driver/usb/usb_prop.o
+                0x000000000000aa8c                usb_rx_hook_get
+ .text.PowerOn  0x000000000000aa92       0x2a ./fw_app/03_Driver/usb/usb_pwr.o
+                0x000000000000aa92                PowerOn
+ .text.Suspend  0x000000000000aabc       0xba ./fw_app/03_Driver/usb/usb_pwr.o
+                0x000000000000aabc                Suspend
  .text.Resume_Init
-                0x000000000000aac6       0x2c ./fw_app/03_Driver/usb/usb_pwr.o
-                0x000000000000aac6                Resume_Init
- .text.Resume   0x000000000000aaf2       0xb6 ./fw_app/03_Driver/usb/usb_pwr.o
-                0x000000000000aaf2                Resume
+                0x000000000000ab76       0x2c ./fw_app/03_Driver/usb/usb_pwr.o
+                0x000000000000ab76                Resume_Init
+ .text.Resume   0x000000000000aba2       0xb6 ./fw_app/03_Driver/usb/usb_pwr.o
+                0x000000000000aba2                Resume
  .text.uart_rx_ring
-                0x000000000000aba8        0x6 ./fw_app/03_Driver/uart/drv_uart.o
+                0x000000000000ac58        0x6 ./fw_app/03_Driver/uart/drv_uart.o
  .text.uart_tx_free
-                0x000000000000abae       0x14 ./fw_app/03_Driver/uart/drv_uart.o
+                0x000000000000ac5e       0x14 ./fw_app/03_Driver/uart/drv_uart.o
  .text.uart_line_apply
-                0x000000000000abc2      0x178 ./fw_app/03_Driver/uart/drv_uart.o
+                0x000000000000ac72      0x178 ./fw_app/03_Driver/uart/drv_uart.o
  .text.uart_line_set
-                0x000000000000ad3a       0x16 ./fw_app/03_Driver/uart/drv_uart.o
+                0x000000000000adea       0x16 ./fw_app/03_Driver/uart/drv_uart.o
  .text.uart_line_get
-                0x000000000000ad50       0x26 ./fw_app/03_Driver/uart/drv_uart.o
+                0x000000000000ae00       0x26 ./fw_app/03_Driver/uart/drv_uart.o
  .text.uart_putc
-                0x000000000000ad76       0x56 ./fw_app/03_Driver/uart/drv_uart.o
+                0x000000000000ae26       0x56 ./fw_app/03_Driver/uart/drv_uart.o
  .text.uart_init
-                0x000000000000adcc       0xb0 ./fw_app/03_Driver/uart/drv_uart.o
- .text.USART1_IRQHandler
                 0x000000000000ae7c       0xb0 ./fw_app/03_Driver/uart/drv_uart.o
-                0x000000000000ae7c                USART1_IRQHandler
+ .text.USART1_IRQHandler
+                0x000000000000af2c       0xb0 ./fw_app/03_Driver/uart/drv_uart.o
+                0x000000000000af2c                USART1_IRQHandler
  .text.wdt_wait_for_record
-                0x000000000000af2c       0x1c ./fw_app/02_BSP/wdt/bsp_wdt.o
+                0x000000000000afdc       0x1c ./fw_app/02_BSP/wdt/bsp_wdt.o
  .text.wdt_before_reset
-                0x000000000000af48        0x4 ./fw_app/02_BSP/wdt/bsp_wdt.o
+                0x000000000000aff8        0x4 ./fw_app/02_BSP/wdt/bsp_wdt.o
  .text.wdt_start
-                0x000000000000af4c        0x2 ./fw_app/02_BSP/wdt/bsp_wdt.o
+                0x000000000000affc        0x2 ./fw_app/02_BSP/wdt/bsp_wdt.o
  .text.wdt_reset
-                0x000000000000af4e       0x40 ./fw_app/02_BSP/wdt/bsp_wdt.o
+                0x000000000000affe       0x42 ./fw_app/02_BSP/wdt/bsp_wdt.o
  .text.wdt_kick
-                0x000000000000af8e       0x28 ./fw_app/02_BSP/wdt/bsp_wdt.o
+                0x000000000000b040       0x28 ./fw_app/02_BSP/wdt/bsp_wdt.o
  .text.time_init
-                0x000000000000afb6       0x52 ./fw_app/02_BSP/time/bsp_time.o
+                0x000000000000b068       0x52 ./fw_app/02_BSP/time/bsp_time.o
  .text.time_start
-                0x000000000000b008       0x28 ./fw_app/02_BSP/time/bsp_time.o
+                0x000000000000b0ba       0x28 ./fw_app/02_BSP/time/bsp_time.o
  .text.time_now_ms
-                0x000000000000b030        0x6 ./fw_app/02_BSP/time/bsp_time.o
+                0x000000000000b0e2        0x6 ./fw_app/02_BSP/time/bsp_time.o
  .text.time_wait
-                0x000000000000b036        0x2 ./fw_app/02_BSP/time/bsp_time.o
+                0x000000000000b0e8        0x2 ./fw_app/02_BSP/time/bsp_time.o
  .text.time_set_ms_hook
-                0x000000000000b038        0x6 ./fw_app/02_BSP/time/bsp_time.o
+                0x000000000000b0ea        0x6 ./fw_app/02_BSP/time/bsp_time.o
  .text.time_cycles
-                0x000000000000b03e        0xa ./fw_app/02_BSP/time/bsp_time.o
+                0x000000000000b0f0        0xa ./fw_app/02_BSP/time/bsp_time.o
  .text.time_print_task
-                0x000000000000b048        0x4 ./fw_app/02_BSP/time/bsp_time.o
+                0x000000000000b0fa        0x4 ./fw_app/02_BSP/time/bsp_time.o
  .text.time_now_us
-                0x000000000000b04c       0x52 ./fw_app/02_BSP/time/bsp_time.o
+                0x000000000000b0fe       0x52 ./fw_app/02_BSP/time/bsp_time.o
  .text.SysTick_Handler
-                0x000000000000b09e       0x20 ./fw_app/02_BSP/time/bsp_time.o
-                0x000000000000b09e                SysTick_Handler
+                0x000000000000b150       0x20 ./fw_app/02_BSP/time/bsp_time.o
+                0x000000000000b150                SysTick_Handler
  .text.gpio_init
-                0x000000000000b0be        0x2 ./fw_app/02_BSP/gpio/bsp_gpio.o
+                0x000000000000b170        0x2 ./fw_app/02_BSP/gpio/bsp_gpio.o
  .text.gpio_write
-                0x000000000000b0c0        0x2 ./fw_app/02_BSP/gpio/bsp_gpio.o
+                0x000000000000b172        0x2 ./fw_app/02_BSP/gpio/bsp_gpio.o
  .text.gpio_toggle
-                0x000000000000b0c2        0x2 ./fw_app/02_BSP/gpio/bsp_gpio.o
+                0x000000000000b174        0x2 ./fw_app/02_BSP/gpio/bsp_gpio.o
  .text.gpio_read
-                0x000000000000b0c4        0x4 ./fw_app/02_BSP/gpio/bsp_gpio.o
+                0x000000000000b176        0x4 ./fw_app/02_BSP/gpio/bsp_gpio.o
  .text.clk_core_hz
-                0x000000000000b0c8        0x6 ./fw_app/02_BSP/clk/bsp_clk.o
+                0x000000000000b17a        0x6 ./fw_app/02_BSP/clk/bsp_clk.o
  .text.clk_gpio_clock_on
-                0x000000000000b0ce        0x2 ./fw_app/02_BSP/clk/bsp_clk.o
+                0x000000000000b180        0x2 ./fw_app/02_BSP/clk/bsp_clk.o
  .text.clk_source
-                0x000000000000b0d0       0x22 ./fw_app/02_BSP/clk/bsp_clk.o
+                0x000000000000b182       0x22 ./fw_app/02_BSP/clk/bsp_clk.o
  .text.clk_init
-                0x000000000000b0f2        0xa ./fw_app/02_BSP/clk/bsp_clk.o
+                0x000000000000b1a4        0xa ./fw_app/02_BSP/clk/bsp_clk.o
  .text.bsp_board_init
-                0x000000000000b0fc       0x90 ./fw_app/02_BSP/board/bsp_board.o
-                0x000000000000b0fc                bsp_board_init
+                0x000000000000b1ae       0x90 ./fw_app/02_BSP/board/bsp_board.o
+                0x000000000000b1ae                bsp_board_init
  .text.bsp_board_irq_on
-                0x000000000000b18c        0xa ./fw_app/02_BSP/board/bsp_board.o
-                0x000000000000b18c                bsp_board_irq_on
+                0x000000000000b23e        0xa ./fw_app/02_BSP/board/bsp_board.o
+                0x000000000000b23e                bsp_board_irq_on
  .text.bsp_board_irq_lock
-                0x000000000000b196        0xe ./fw_app/02_BSP/board/bsp_board.o
-                0x000000000000b196                bsp_board_irq_lock
+                0x000000000000b248        0xe ./fw_app/02_BSP/board/bsp_board.o
+                0x000000000000b248                bsp_board_irq_lock
  .text.bsp_board_irq_unlock
-                0x000000000000b1a4        0x6 ./fw_app/02_BSP/board/bsp_board.o
-                0x000000000000b1a4                bsp_board_irq_unlock
+                0x000000000000b256        0x6 ./fw_app/02_BSP/board/bsp_board.o
+                0x000000000000b256                bsp_board_irq_unlock
  .text.app_init
-                0x000000000000b1aa       0xd8 ./fw_app/01_Port/port/port.o
-                0x000000000000b1aa                app_init
+                0x000000000000b25c       0xd8 ./fw_app/01_Port/port/port.o
+                0x000000000000b25c                app_init
  .text.app_loop
-                0x000000000000b282       0x14 ./fw_app/01_Port/port/port.o
-                0x000000000000b282                app_loop
+                0x000000000000b334       0x14 ./fw_app/01_Port/port/port.o
+                0x000000000000b334                app_loop
  .text.on_sched_bad_table
-                0x000000000000b296        0x4 ./fw_app/00_System/System/platform.o
+                0x000000000000b348        0x4 ./fw_app/00_System/System/platform.o
  .text.on_sched_reenter
-                0x000000000000b29a        0x4 ./fw_app/00_System/System/platform.o
+                0x000000000000b34c        0x4 ./fw_app/00_System/System/platform.o
  .text.on_sched_overrun
-                0x000000000000b29e        0x4 ./fw_app/00_System/System/platform.o
+                0x000000000000b350        0x4 ./fw_app/00_System/System/platform.o
  .text.on_timebase_dead
-                0x000000000000b2a2        0x4 ./fw_app/00_System/System/platform.o
+                0x000000000000b354        0x4 ./fw_app/00_System/System/platform.o
  .text.on_wdt_hang
-                0x000000000000b2a6       0x1e ./fw_app/00_System/System/platform.o
+                0x000000000000b358       0x1e ./fw_app/00_System/System/platform.o
  .text.on_evt_full
-                0x000000000000b2c4        0x4 ./fw_app/00_System/System/platform.o
+                0x000000000000b376        0x4 ./fw_app/00_System/System/platform.o
  .text.on_task_fail
-                0x000000000000b2c8        0x4 ./fw_app/00_System/System/platform.o
+                0x000000000000b37a        0x4 ./fw_app/00_System/System/platform.o
  .text.plat_on_reset
-                0x000000000000b2cc        0x8 ./fw_app/00_System/System/platform.o
-                0x000000000000b2cc                plat_on_reset
+                0x000000000000b37e        0x8 ./fw_app/00_System/System/platform.o
+                0x000000000000b37e                plat_on_reset
  .text.plat_on_task_stuck
-                0x000000000000b2d4       0x1a ./fw_app/00_System/System/platform.o
-                0x000000000000b2d4                plat_on_task_stuck
+                0x000000000000b386       0x1a ./fw_app/00_System/System/platform.o
+                0x000000000000b386                plat_on_task_stuck
  .text.plat_raise
-                0x000000000000b2ee       0x3e ./fw_app/00_System/System/platform.o
-                0x000000000000b2ee                plat_raise
+                0x000000000000b3a0       0x3e ./fw_app/00_System/System/platform.o
+                0x000000000000b3a0                plat_raise
  .text.NMI_Handler
-                0x000000000000b32c        0x2 ./User/ch32v20x_it.o
-                0x000000000000b32c                NMI_Handler
+                0x000000000000b3de        0x2 ./User/ch32v20x_it.o
+                0x000000000000b3de                NMI_Handler
  .text.HardFault_Handler
-                0x000000000000b32e       0x10 ./User/ch32v20x_it.o
-                0x000000000000b32e                HardFault_Handler
+                0x000000000000b3e0       0x10 ./User/ch32v20x_it.o
+                0x000000000000b3e0                HardFault_Handler
  .text.startup.main
-                0x000000000000b33e        0xe ./User/main.o
-                0x000000000000b33e                main
+                0x000000000000b3f0        0xe ./User/main.o
+                0x000000000000b3f0                main
  .text.SystemInit
-                0x000000000000b34c      0x156 ./User/system_ch32v20x.o
-                0x000000000000b34c                SystemInit
+                0x000000000000b3fe      0x156 ./User/system_ch32v20x.o
+                0x000000000000b3fe                SystemInit
  .text.SystemCoreClockUpdate
-                0x000000000000b4a2       0x8e ./User/system_ch32v20x.o
-                0x000000000000b4a2                SystemCoreClockUpdate
+                0x000000000000b554       0x8e ./User/system_ch32v20x.o
+                0x000000000000b554                SystemCoreClockUpdate
  .text.vector_handler
-                0x000000000000b530        0x2 ./Startup/startup_ch32v20x_D6.o
-                0x000000000000b530                EXTI2_IRQHandler
-                0x000000000000b530                TIM1_CC_IRQHandler
-                0x000000000000b530                PVD_IRQHandler
-                0x000000000000b530                EXTI3_IRQHandler
-                0x000000000000b530                USBFS_IRQHandler
-                0x000000000000b530                EXTI0_IRQHandler
-                0x000000000000b530                I2C2_EV_IRQHandler
-                0x000000000000b530                ADC1_2_IRQHandler
-                0x000000000000b530                Break_Point_Handler
-                0x000000000000b530                SPI1_IRQHandler
-                0x000000000000b530                TAMPER_IRQHandler
-                0x000000000000b530                Ecall_M_Mode_Handler
-                0x000000000000b530                DMA1_Channel4_IRQHandler
-                0x000000000000b530                USART3_IRQHandler
-                0x000000000000b530                RTC_IRQHandler
-                0x000000000000b530                DMA1_Channel7_IRQHandler
-                0x000000000000b530                CAN1_RX1_IRQHandler
-                0x000000000000b530                TIM4_IRQHandler
-                0x000000000000b530                I2C1_EV_IRQHandler
-                0x000000000000b530                DMA1_Channel6_IRQHandler
-                0x000000000000b530                UART4_IRQHandler
-                0x000000000000b530                TIM3_IRQHandler
-                0x000000000000b530                RCC_IRQHandler
-                0x000000000000b530                TIM1_TRG_COM_IRQHandler
-                0x000000000000b530                DMA1_Channel1_IRQHandler
-                0x000000000000b530                EXTI15_10_IRQHandler
-                0x000000000000b530                DMA1_Channel8_IRQHandler
-                0x000000000000b530                EXTI9_5_IRQHandler
-                0x000000000000b530                SPI2_IRQHandler
-                0x000000000000b530                DMA1_Channel5_IRQHandler
-                0x000000000000b530                EXTI4_IRQHandler
-                0x000000000000b530                USB_HP_CAN1_TX_IRQHandler
-                0x000000000000b530                DMA1_Channel3_IRQHandler
-                0x000000000000b530                TIM1_UP_IRQHandler
-                0x000000000000b530                WWDG_IRQHandler
-                0x000000000000b530                Ecall_U_Mode_Handler
-                0x000000000000b530                TIM2_IRQHandler
-                0x000000000000b530                SW_Handler
-                0x000000000000b530                TIM1_BRK_IRQHandler
-                0x000000000000b530                EXTI1_IRQHandler
-                0x000000000000b530                RTCAlarm_IRQHandler
-                0x000000000000b530                USART2_IRQHandler
-                0x000000000000b530                I2C2_ER_IRQHandler
-                0x000000000000b530                DMA1_Channel2_IRQHandler
-                0x000000000000b530                CAN1_SCE_IRQHandler
-                0x000000000000b530                FLASH_IRQHandler
-                0x000000000000b530                USBFSWakeUp_IRQHandler
-                0x000000000000b530                I2C1_ER_IRQHandler
+                0x000000000000b5e2        0x2 ./Startup/startup_ch32v20x_D6.o
+                0x000000000000b5e2                EXTI2_IRQHandler
+                0x000000000000b5e2                TIM1_CC_IRQHandler
+                0x000000000000b5e2                PVD_IRQHandler
+                0x000000000000b5e2                EXTI3_IRQHandler
+                0x000000000000b5e2                USBFS_IRQHandler
+                0x000000000000b5e2                EXTI0_IRQHandler
+                0x000000000000b5e2                I2C2_EV_IRQHandler
+                0x000000000000b5e2                ADC1_2_IRQHandler
+                0x000000000000b5e2                Break_Point_Handler
+                0x000000000000b5e2                SPI1_IRQHandler
+                0x000000000000b5e2                TAMPER_IRQHandler
+                0x000000000000b5e2                Ecall_M_Mode_Handler
+                0x000000000000b5e2                DMA1_Channel4_IRQHandler
+                0x000000000000b5e2                USART3_IRQHandler
+                0x000000000000b5e2                RTC_IRQHandler
+                0x000000000000b5e2                DMA1_Channel7_IRQHandler
+                0x000000000000b5e2                CAN1_RX1_IRQHandler
+                0x000000000000b5e2                TIM4_IRQHandler
+                0x000000000000b5e2                I2C1_EV_IRQHandler
+                0x000000000000b5e2                DMA1_Channel6_IRQHandler
+                0x000000000000b5e2                UART4_IRQHandler
+                0x000000000000b5e2                TIM3_IRQHandler
+                0x000000000000b5e2                RCC_IRQHandler
+                0x000000000000b5e2                TIM1_TRG_COM_IRQHandler
+                0x000000000000b5e2                DMA1_Channel1_IRQHandler
+                0x000000000000b5e2                EXTI15_10_IRQHandler
+                0x000000000000b5e2                DMA1_Channel8_IRQHandler
+                0x000000000000b5e2                EXTI9_5_IRQHandler
+                0x000000000000b5e2                SPI2_IRQHandler
+                0x000000000000b5e2                DMA1_Channel5_IRQHandler
+                0x000000000000b5e2                EXTI4_IRQHandler
+                0x000000000000b5e2                USB_HP_CAN1_TX_IRQHandler
+                0x000000000000b5e2                DMA1_Channel3_IRQHandler
+                0x000000000000b5e2                TIM1_UP_IRQHandler
+                0x000000000000b5e2                WWDG_IRQHandler
+                0x000000000000b5e2                Ecall_U_Mode_Handler
+                0x000000000000b5e2                TIM2_IRQHandler
+                0x000000000000b5e2                SW_Handler
+                0x000000000000b5e2                TIM1_BRK_IRQHandler
+                0x000000000000b5e2                EXTI1_IRQHandler
+                0x000000000000b5e2                RTCAlarm_IRQHandler
+                0x000000000000b5e2                USART2_IRQHandler
+                0x000000000000b5e2                I2C2_ER_IRQHandler
+                0x000000000000b5e2                DMA1_Channel2_IRQHandler
+                0x000000000000b5e2                CAN1_SCE_IRQHandler
+                0x000000000000b5e2                FLASH_IRQHandler
+                0x000000000000b5e2                USBFSWakeUp_IRQHandler
+                0x000000000000b5e2                I2C1_ER_IRQHandler
  .text.handle_reset
-                0x000000000000b532       0x86 ./Startup/startup_ch32v20x_D6.o
-                0x000000000000b532                handle_reset
+                0x000000000000b5e4       0x86 ./Startup/startup_ch32v20x_D6.o
+                0x000000000000b5e4                handle_reset
  .text.EXTI_Init
-                0x000000000000b5b8       0x6a ./Peripheral/src/ch32v20x_exti.o
-                0x000000000000b5b8                EXTI_Init
+                0x000000000000b66a       0x6a ./Peripheral/src/ch32v20x_exti.o
+                0x000000000000b66a                EXTI_Init
  .text.EXTI_ClearITPendingBit
-                0x000000000000b622        0xa ./Peripheral/src/ch32v20x_exti.o
-                0x000000000000b622                EXTI_ClearITPendingBit
+                0x000000000000b6d4        0xa ./Peripheral/src/ch32v20x_exti.o
+                0x000000000000b6d4                EXTI_ClearITPendingBit
  .text.GPIO_Init
-                0x000000000000b62c       0xf2 ./Peripheral/src/ch32v20x_gpio.o
-                0x000000000000b62c                GPIO_Init
+                0x000000000000b6de       0xf2 ./Peripheral/src/ch32v20x_gpio.o
+                0x000000000000b6de                GPIO_Init
  .text.IWDG_WriteAccessCmd
-                0x000000000000b71e        0x8 ./Peripheral/src/ch32v20x_iwdg.o
-                0x000000000000b71e                IWDG_WriteAccessCmd
+                0x000000000000b7d0        0x8 ./Peripheral/src/ch32v20x_iwdg.o
+                0x000000000000b7d0                IWDG_WriteAccessCmd
  .text.IWDG_SetPrescaler
-                0x000000000000b726        0x8 ./Peripheral/src/ch32v20x_iwdg.o
-                0x000000000000b726                IWDG_SetPrescaler
+                0x000000000000b7d8        0x8 ./Peripheral/src/ch32v20x_iwdg.o
+                0x000000000000b7d8                IWDG_SetPrescaler
  .text.IWDG_SetReload
-                0x000000000000b72e        0x8 ./Peripheral/src/ch32v20x_iwdg.o
-                0x000000000000b72e                IWDG_SetReload
+                0x000000000000b7e0        0x8 ./Peripheral/src/ch32v20x_iwdg.o
+                0x000000000000b7e0                IWDG_SetReload
  .text.IWDG_ReloadCounter
-                0x000000000000b736        0xe ./Peripheral/src/ch32v20x_iwdg.o
-                0x000000000000b736                IWDG_ReloadCounter
+                0x000000000000b7e8        0xe ./Peripheral/src/ch32v20x_iwdg.o
+                0x000000000000b7e8                IWDG_ReloadCounter
  .text.IWDG_Enable
-                0x000000000000b744       0x18 ./Peripheral/src/ch32v20x_iwdg.o
-                0x000000000000b744                IWDG_Enable
+                0x000000000000b7f6       0x18 ./Peripheral/src/ch32v20x_iwdg.o
+                0x000000000000b7f6                IWDG_Enable
  .text.NVIC_PriorityGroupConfig
-                0x000000000000b75c        0x6 ./Peripheral/src/ch32v20x_misc.o
-                0x000000000000b75c                NVIC_PriorityGroupConfig
+                0x000000000000b80e        0x6 ./Peripheral/src/ch32v20x_misc.o
+                0x000000000000b80e                NVIC_PriorityGroupConfig
  .text.NVIC_Init
-                0x000000000000b762       0x54 ./Peripheral/src/ch32v20x_misc.o
-                0x000000000000b762                NVIC_Init
+                0x000000000000b814       0x54 ./Peripheral/src/ch32v20x_misc.o
+                0x000000000000b814                NVIC_Init
  .text.RCC_GetSYSCLKSource
-                0x000000000000b7b6        0xa ./Peripheral/src/ch32v20x_rcc.o
-                0x000000000000b7b6                RCC_GetSYSCLKSource
+                0x000000000000b868        0xa ./Peripheral/src/ch32v20x_rcc.o
+                0x000000000000b868                RCC_GetSYSCLKSource
  .text.RCC_USBCLKConfig
-                0x000000000000b7c0       0x1a ./Peripheral/src/ch32v20x_rcc.o
-                0x000000000000b7c0                RCC_USBCLKConfig
+                0x000000000000b872       0x1a ./Peripheral/src/ch32v20x_rcc.o
+                0x000000000000b872                RCC_USBCLKConfig
  .text.RCC_GetClocksFreq
-                0x000000000000b7da       0xbe ./Peripheral/src/ch32v20x_rcc.o
-                0x000000000000b7da                RCC_GetClocksFreq
+                0x000000000000b88c       0xbe ./Peripheral/src/ch32v20x_rcc.o
+                0x000000000000b88c                RCC_GetClocksFreq
  .text.RCC_APB2PeriphClockCmd
-                0x000000000000b898       0x1e ./Peripheral/src/ch32v20x_rcc.o
-                0x000000000000b898                RCC_APB2PeriphClockCmd
+                0x000000000000b94a       0x1e ./Peripheral/src/ch32v20x_rcc.o
+                0x000000000000b94a                RCC_APB2PeriphClockCmd
  .text.RCC_APB1PeriphClockCmd
-                0x000000000000b8b6       0x1e ./Peripheral/src/ch32v20x_rcc.o
-                0x000000000000b8b6                RCC_APB1PeriphClockCmd
+                0x000000000000b968       0x1e ./Peripheral/src/ch32v20x_rcc.o
+                0x000000000000b968                RCC_APB1PeriphClockCmd
  .text.RCC_GetFlagStatus
-                0x000000000000b8d4       0x2e ./Peripheral/src/ch32v20x_rcc.o
-                0x000000000000b8d4                RCC_GetFlagStatus
+                0x000000000000b986       0x2e ./Peripheral/src/ch32v20x_rcc.o
+                0x000000000000b986                RCC_GetFlagStatus
  .text.RCC_ClearFlag
-                0x000000000000b902       0x10 ./Peripheral/src/ch32v20x_rcc.o
-                0x000000000000b902                RCC_ClearFlag
+                0x000000000000b9b4       0x10 ./Peripheral/src/ch32v20x_rcc.o
+                0x000000000000b9b4                RCC_ClearFlag
  .text.USART_Init
-                0x000000000000b912       0x90 ./Peripheral/src/ch32v20x_usart.o
-                0x000000000000b912                USART_Init
+                0x000000000000b9c4       0x90 ./Peripheral/src/ch32v20x_usart.o
+                0x000000000000b9c4                USART_Init
  .text.USART_Cmd
-                0x000000000000b9a2       0x16 ./Peripheral/src/ch32v20x_usart.o
-                0x000000000000b9a2                USART_Cmd
+                0x000000000000ba54       0x16 ./Peripheral/src/ch32v20x_usart.o
+                0x000000000000ba54                USART_Cmd
  .text.USART_ITConfig
-                0x000000000000b9b8       0x36 ./Peripheral/src/ch32v20x_usart.o
-                0x000000000000b9b8                USART_ITConfig
- .text.memcpy   0x000000000000b9ee       0xb2 e:/wch_ide_yh/mounriver_studio/toolchain/risc-v embedded gcc/bin/../lib/gcc/riscv-none-embed/8.2.0/../../../../riscv-none-embed/lib/rv32imacxw/ilp32\libg_nano.a(lib_a-memcpy.o)
-                0x000000000000b9ee                memcpy
+                0x000000000000ba6a       0x36 ./Peripheral/src/ch32v20x_usart.o
+                0x000000000000ba6a                USART_ITConfig
+ .text.memcpy   0x000000000000baa0       0xb2 e:/wch_ide_yh/mounriver_studio/toolchain/risc-v embedded gcc/bin/../lib/gcc/riscv-none-embed/8.2.0/../../../../riscv-none-embed/lib/rv32imacxw/ilp32\libg_nano.a(lib_a-memcpy.o)
+                0x000000000000baa0                memcpy
  *(.rodata)
  *(.rodata*)
- *fill*         0x000000000000baa0        0x0 
+ *fill*         0x000000000000bb52        0x2 
  .rodata.s_baud
-                0x000000000000baa0       0x40 ./fw_app/06_App/usb_comm/app_usb_comm.o
- .rodata.s_cmd  0x000000000000bae0       0x20 ./fw_app/06_App/usb_comm/app_usb_comm.o
+                0x000000000000bb54       0x40 ./fw_app/06_App/usb_comm/app_usb_comm.o
+ .rodata.s_cmd  0x000000000000bb94       0x20 ./fw_app/06_App/usb_comm/app_usb_comm.o
  .rodata.s_tasks
-                0x000000000000bb00       0x40 ./fw_app/05_Scheduler/sched_tasks/sched_tasks.o
+                0x000000000000bbb4       0x40 ./fw_app/05_Scheduler/sched_tasks/sched_tasks.o
  .rodata.str1.4
-                0x000000000000bb40       0x1c ./fw_app/05_Scheduler/sched_tasks/sched_tasks.o
+                0x000000000000bbf4       0x1c ./fw_app/05_Scheduler/sched_tasks/sched_tasks.o
  .rodata.sched_sw_driver
-                0x000000000000bb5c       0x10 ./fw_app/05_Scheduler/sched/sched.o
-                0x000000000000bb5c                sched_sw_driver
+                0x000000000000bc10       0x10 ./fw_app/05_Scheduler/sched/sched.o
+                0x000000000000bc10                sched_sw_driver
  .rodata.rb_sw_driver
-                0x000000000000bb6c       0x2c ./fw_app/04_Components/ring_buffer/ring_buffer.o
-                0x000000000000bb6c                rb_sw_driver
+                0x000000000000bc20       0x2c ./fw_app/04_Components/ring_buffer/ring_buffer.o
+                0x000000000000bc20                rb_sw_driver
  .rodata.log_sw_driver
-                0x000000000000bb98       0x20 ./fw_app/04_Components/log/log.o
-                0x000000000000bb98                log_sw_driver
+                0x000000000000bc4c       0x20 ./fw_app/04_Components/log/log.o
+                0x000000000000bc4c                log_sw_driver
  .rodata.evt_sw_driver
-                0x000000000000bbb8        0xc ./fw_app/04_Components/evt/evt.o
-                0x000000000000bbb8                evt_sw_driver
+                0x000000000000bc6c        0xc ./fw_app/04_Components/evt/evt.o
+                0x000000000000bc6c                evt_sw_driver
  .rodata.crc_sw_driver
-                0x000000000000bbc4       0x1c ./fw_app/04_Components/CRC/crc.o
-                0x000000000000bbc4                crc_sw_driver
+                0x000000000000bc78       0x1c ./fw_app/04_Components/CRC/crc.o
+                0x000000000000bc78                crc_sw_driver
  .rodata.param.1627
-                0x000000000000bbe0       0x14 ./fw_app/04_Components/CRC/crc.o
+                0x000000000000bc94       0x14 ./fw_app/04_Components/CRC/crc.o
  .rodata.param.1632
-                0x000000000000bbf4       0x14 ./fw_app/04_Components/CRC/crc.o
+                0x000000000000bca8       0x14 ./fw_app/04_Components/CRC/crc.o
  .rodata.param.1637
-                0x000000000000bc08       0x14 ./fw_app/04_Components/CRC/crc.o
+                0x000000000000bcbc       0x14 ./fw_app/04_Components/CRC/crc.o
  .rodata.param.1642
-                0x000000000000bc1c       0x14 ./fw_app/04_Components/CRC/crc.o
+                0x000000000000bcd0       0x14 ./fw_app/04_Components/CRC/crc.o
  .rodata.param.1647
-                0x000000000000bc30       0x14 ./fw_app/04_Components/CRC/crc.o
+                0x000000000000bce4       0x14 ./fw_app/04_Components/CRC/crc.o
  .rodata.param.1652
-                0x000000000000bc44       0x14 ./fw_app/04_Components/CRC/crc.o
+                0x000000000000bcf8       0x14 ./fw_app/04_Components/CRC/crc.o
  .rodata.param.1657
-                0x000000000000bc58       0x14 ./fw_app/04_Components/CRC/crc.o
+                0x000000000000bd0c       0x14 ./fw_app/04_Components/CRC/crc.o
  .rodata.drv_usb
-                0x000000000000bc6c       0x18 ./fw_app/03_Driver/usb/drv_usb.o
-                0x000000000000bc6c                drv_usb
+                0x000000000000bd20       0x18 ./fw_app/03_Driver/usb/drv_usb.o
+                0x000000000000bd20                drv_usb
  .rodata.USBD_ConfigDescriptor
-                0x000000000000bc84       0x43 ./fw_app/03_Driver/usb/usb_desc.o
-                0x000000000000bc84                USBD_ConfigDescriptor
- *fill*         0x000000000000bcc7        0x1 
+                0x000000000000bd38       0x43 ./fw_app/03_Driver/usb/usb_desc.o
+                0x000000000000bd38                USBD_ConfigDescriptor
+ *fill*         0x000000000000bd7b        0x1 
  .rodata.USBD_DeviceDescriptor
-                0x000000000000bcc8       0x12 ./fw_app/03_Driver/usb/usb_desc.o
-                0x000000000000bcc8                USBD_DeviceDescriptor
- *fill*         0x000000000000bcda        0x2 
+                0x000000000000bd7c       0x12 ./fw_app/03_Driver/usb/usb_desc.o
+                0x000000000000bd7c                USBD_DeviceDescriptor
+ *fill*         0x000000000000bd8e        0x2 
  .rodata.USBD_StringProduct
-                0x000000000000bcdc       0x16 ./fw_app/03_Driver/usb/usb_desc.o
-                0x000000000000bcdc                USBD_StringProduct
- *fill*         0x000000000000bcf2        0x2 
+                0x000000000000bd90       0x16 ./fw_app/03_Driver/usb/usb_desc.o
+                0x000000000000bd90                USBD_StringProduct
+ *fill*         0x000000000000bda6        0x2 
  .rodata.USBD_StringVendor
-                0x000000000000bcf4        0xe ./fw_app/03_Driver/usb/usb_desc.o
-                0x000000000000bcf4                USBD_StringVendor
- *fill*         0x000000000000bd02        0x2 
+                0x000000000000bda8        0xe ./fw_app/03_Driver/usb/usb_desc.o
+                0x000000000000bda8                USBD_StringVendor
+ *fill*         0x000000000000bdb6        0x2 
  .rodata.Resume
-                0x000000000000bd04       0x18 ./fw_app/03_Driver/usb/usb_pwr.o
+                0x000000000000bdb8       0x18 ./fw_app/03_Driver/usb/usb_pwr.o
  .rodata.drv_uart
-                0x000000000000bd1c       0x18 ./fw_app/03_Driver/uart/drv_uart.o
-                0x000000000000bd1c                drv_uart
+                0x000000000000bdd0       0x18 ./fw_app/03_Driver/uart/drv_uart.o
+                0x000000000000bdd0                drv_uart
  .rodata.s_line_boot
-                0x000000000000bd34       0x10 ./fw_app/03_Driver/uart/drv_uart.o
+                0x000000000000bde8       0x10 ./fw_app/03_Driver/uart/drv_uart.o
  .rodata.bsp_wdt
-                0x000000000000bd44       0x10 ./fw_app/02_BSP/wdt/bsp_wdt.o
-                0x000000000000bd44                bsp_wdt
+                0x000000000000bdf8       0x10 ./fw_app/02_BSP/wdt/bsp_wdt.o
+                0x000000000000bdf8                bsp_wdt
  .rodata.bsp_time
-                0x000000000000bd54       0x20 ./fw_app/02_BSP/time/bsp_time.o
-                0x000000000000bd54                bsp_time
+                0x000000000000be08       0x20 ./fw_app/02_BSP/time/bsp_time.o
+                0x000000000000be08                bsp_time
  .rodata.bsp_gpio
-                0x000000000000bd74       0x10 ./fw_app/02_BSP/gpio/bsp_gpio.o
-                0x000000000000bd74                bsp_gpio
+                0x000000000000be28       0x10 ./fw_app/02_BSP/gpio/bsp_gpio.o
+                0x000000000000be28                bsp_gpio
  .rodata.bsp_clk
-                0x000000000000bd84       0x10 ./fw_app/02_BSP/clk/bsp_clk.o
-                0x000000000000bd84                bsp_clk
+                0x000000000000be38       0x10 ./fw_app/02_BSP/clk/bsp_clk.o
+                0x000000000000be38                bsp_clk
  .rodata.plat_hook_evt_full
-                0x000000000000bd94        0xc ./fw_app/00_System/System/platform.o
-                0x000000000000bd94                plat_hook_evt_full
+                0x000000000000be48        0xc ./fw_app/00_System/System/platform.o
+                0x000000000000be48                plat_hook_evt_full
  .rodata.plat_hook_sched_bad_table
-                0x000000000000bda0        0xc ./fw_app/00_System/System/platform.o
-                0x000000000000bda0                plat_hook_sched_bad_table
+                0x000000000000be54        0xc ./fw_app/00_System/System/platform.o
+                0x000000000000be54                plat_hook_sched_bad_table
  .rodata.plat_hook_sched_overrun
-                0x000000000000bdac        0xc ./fw_app/00_System/System/platform.o
-                0x000000000000bdac                plat_hook_sched_overrun
+                0x000000000000be60        0xc ./fw_app/00_System/System/platform.o
+                0x000000000000be60                plat_hook_sched_overrun
  .rodata.plat_hook_sched_reenter
-                0x000000000000bdb8        0xc ./fw_app/00_System/System/platform.o
-                0x000000000000bdb8                plat_hook_sched_reenter
+                0x000000000000be6c        0xc ./fw_app/00_System/System/platform.o
+                0x000000000000be6c                plat_hook_sched_reenter
  .rodata.plat_hook_task_fail
-                0x000000000000bdc4        0xc ./fw_app/00_System/System/platform.o
-                0x000000000000bdc4                plat_hook_task_fail
+                0x000000000000be78        0xc ./fw_app/00_System/System/platform.o
+                0x000000000000be78                plat_hook_task_fail
  .rodata.plat_hook_timebase_dead
-                0x000000000000bdd0        0xc ./fw_app/00_System/System/platform.o
-                0x000000000000bdd0                plat_hook_timebase_dead
+                0x000000000000be84        0xc ./fw_app/00_System/System/platform.o
+                0x000000000000be84                plat_hook_timebase_dead
  .rodata.plat_hook_wdt_hang
-                0x000000000000bddc        0xc ./fw_app/00_System/System/platform.o
-                0x000000000000bddc                plat_hook_wdt_hang
+                0x000000000000be90        0xc ./fw_app/00_System/System/platform.o
+                0x000000000000be90                plat_hook_wdt_hang
  .rodata.plat_raise.str1.4
-                0x000000000000bde8        0xa ./fw_app/00_System/System/platform.o
- *fill*         0x000000000000bdf2        0x2 
+                0x000000000000be9c        0xa ./fw_app/00_System/System/platform.o
+ *fill*         0x000000000000bea6        0x2 
  .rodata.str1.4
-                0x000000000000bdf4       0x70 ./fw_app/00_System/System/platform.o
+                0x000000000000bea8       0x70 ./fw_app/00_System/System/platform.o
  *(.gnu.linkonce.t.*)
-                0x000000000000be64                . = ALIGN (0x4)
+                0x000000000000bf18                . = ALIGN (0x4)
 
-.rela.dyn       0x000000000000be64        0x0
- .rela.init     0x000000000000be64        0x0 ./fw_app/06_App/usb_comm/app_usb_comm.o
- .rela.vector   0x000000000000be64        0x0 ./fw_app/06_App/usb_comm/app_usb_comm.o
+.rela.dyn       0x000000000000bf18        0x0
+ .rela.init     0x000000000000bf18        0x0 ./fw_app/06_App/usb_comm/app_usb_comm.o
+ .rela.vector   0x000000000000bf18        0x0 ./fw_app/06_App/usb_comm/app_usb_comm.o
  .rela.text.handle_reset
-                0x000000000000be64        0x0 ./fw_app/06_App/usb_comm/app_usb_comm.o
+                0x000000000000bf18        0x0 ./fw_app/06_App/usb_comm/app_usb_comm.o
 
-.fini           0x000000000000be64        0x0
+.fini           0x000000000000bf18        0x0
  *(SORT_NONE(.fini))
-                0x000000000000be64                . = ALIGN (0x4)
+                0x000000000000bf18                . = ALIGN (0x4)
                 [!provide]                        PROVIDE (_etext = .)
                 [!provide]                        PROVIDE (_eitcm = .)
 
-.preinit_array  0x000000000000be64        0x0
+.preinit_array  0x000000000000bf18        0x0
                 [!provide]                        PROVIDE (__preinit_array_start = .)
  *(.preinit_array)
                 [!provide]                        PROVIDE (__preinit_array_end = .)
 
-.init_array     0x000000000000be64        0x0
+.init_array     0x000000000000bf18        0x0
                 [!provide]                        PROVIDE (__init_array_start = .)
  *(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*))
  *(.init_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .ctors)
                 [!provide]                        PROVIDE (__init_array_end = .)
 
-.fini_array     0x000000000000be64        0x0
+.fini_array     0x000000000000bf18        0x0
                 [!provide]                        PROVIDE (__fini_array_start = .)
  *(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*))
  *(.fini_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .dtors)
@@ -2314,15 +2319,15 @@ END GROUP
  *(SORT_BY_NAME(.dtors.*))
  *(.dtors)
 
-.dalign         0x0000000020000000        0x0 load address 0x000000000000be64
+.dalign         0x0000000020000000        0x0 load address 0x000000000000bf18
                 0x0000000020000000                . = ALIGN (0x4)
                 0x0000000020000000                PROVIDE (_data_vma = .)
 
-.dlalign        0x000000000000be64        0x0
-                0x000000000000be64                . = ALIGN (0x4)
-                0x000000000000be64                PROVIDE (_data_lma = .)
+.dlalign        0x000000000000bf18        0x0
+                0x000000000000bf18                . = ALIGN (0x4)
+                0x000000000000bf18                PROVIDE (_data_lma = .)
 
-.data           0x0000000020000000      0x120 load address 0x000000000000be64
+.data           0x0000000020000000      0x120 load address 0x000000000000bf18
  *(.gnu.linkonce.r.*)
  *(.data .data.*)
  .data.USBD_StringSerial
@@ -2392,7 +2397,7 @@ END GROUP
                 0x0000000020000120                . = ALIGN (0x4)
                 0x0000000020000120                PROVIDE (_edata = .)
 
-.bss            0x0000000020000120      0x4b8 load address 0x000000000000bf84
+.bss            0x0000000020000120      0x4ac load address 0x000000000000c038
                 0x0000000020000120                . = ALIGN (0x4)
                 0x0000000020000120                PROVIDE (_sbss = .)
  *(.sbss*)
@@ -2497,39 +2502,43 @@ END GROUP
  *(.bss*)
  .bss.s_usb_rx  0x00000000200001a0      0x108 ./fw_app/06_App/usb_comm/app_usb_comm.o
  .bss.s_rt      0x00000000200002a8       0xc0 ./fw_app/05_Scheduler/sched_tasks/sched_tasks.o
- .bss.g_log_emergency
-                0x0000000020000368        0xc ./fw_app/04_Components/log/log.o
-                0x0000000020000368                g_log_emergency
- .bss.s_box     0x0000000020000374       0x40 ./fw_app/04_Components/evt/evt.o
+ .bss.s_box     0x0000000020000368       0x40 ./fw_app/04_Components/evt/evt.o
  .bss.Device_Info
-                0x00000000200003b4       0x1c ./fw_app/03_Driver/usb/vendor/src/usb_init.o
-                0x00000000200003b4                Device_Info
- .bss.EP        0x00000000200003d0       0x20 ./fw_app/03_Driver/usb/usb_pwr.o
-                0x00000000200003d0                EP
- .bss.s_line    0x00000000200003f0       0x10 ./fw_app/03_Driver/uart/drv_uart.o
- .bss.s_rx      0x0000000020000400      0x108 ./fw_app/03_Driver/uart/drv_uart.o
- .bss.s_tx      0x0000000020000508       0x80 ./fw_app/03_Driver/uart/drv_uart.o
+                0x00000000200003a8       0x1c ./fw_app/03_Driver/usb/vendor/src/usb_init.o
+                0x00000000200003a8                Device_Info
+ .bss.EP        0x00000000200003c4       0x20 ./fw_app/03_Driver/usb/usb_pwr.o
+                0x00000000200003c4                EP
+ .bss.s_line    0x00000000200003e4       0x10 ./fw_app/03_Driver/uart/drv_uart.o
+ .bss.s_rx      0x00000000200003f4      0x108 ./fw_app/03_Driver/uart/drv_uart.o
+ .bss.s_tx      0x00000000200004fc       0x80 ./fw_app/03_Driver/uart/drv_uart.o
  .bss.g_mcu_uid
-                0x0000000020000588        0xc ./fw_app/02_BSP/board/bsp_board.o
-                0x0000000020000588                g_mcu_uid
- .bss.s_sched   0x0000000020000594       0x34 ./fw_app/01_Port/port/port.o
+                0x000000002000057c        0xc ./fw_app/02_BSP/board/bsp_board.o
+                0x000000002000057c                g_mcu_uid
+ .bss.s_sched   0x0000000020000588       0x34 ./fw_app/01_Port/port/port.o
  .bss.g_plat_last_fault
-                0x00000000200005c8       0x10 ./fw_app/00_System/System/platform.o
-                0x00000000200005c8                g_plat_last_fault
+                0x00000000200005bc       0x10 ./fw_app/00_System/System/platform.o
+                0x00000000200005bc                g_plat_last_fault
  *(.gnu.linkonce.b.*)
  *(COMMON*)
-                0x00000000200005d8                . = ALIGN (0x4)
-                0x00000000200005d8                PROVIDE (_ebss = .)
-                0x00000000200005d8                PROVIDE (_end = _ebss)
+                0x00000000200005cc                . = ALIGN (0x4)
+                0x00000000200005cc                PROVIDE (_ebss = .)
+                0x00000000200005cc                PROVIDE (_end = _ebss)
                 [!provide]                        PROVIDE (end = .)
 
-.stack          0x0000000020004800      0x800
-                0x0000000020004800                PROVIDE (_heap_end = .)
-                0x0000000020004800                . = ALIGN (0x4)
+.stack          0x0000000020004700      0x800
+                0x0000000020004700                PROVIDE (_heap_end = .)
+                0x0000000020004700                . = ALIGN (0x4)
                 [!provide]                        PROVIDE (_susrstack = .)
-                0x0000000020005000                . = (. + __stack_size)
- *fill*         0x0000000020004800      0x800 
-                0x0000000020005000                PROVIDE (_eusrstack = .)
+                0x0000000020004f00                . = (. + __stack_size)
+ *fill*         0x0000000020004700      0x800 
+                0x0000000020004f00                PROVIDE (_eusrstack = .)
+
+.share          0x0000000020004f00       0x10
+ *(.share .share.*)
+ .share         0x0000000020004f00       0x10 ./fw_app/04_Components/log/log.o
+                0x0000000020004f00                g_log_emergency
+                0x0000000000000001                ASSERT (((ORIGIN (RAM) + LENGTH (RAM)) == ORIGIN (SHARE)), RAM end is not the share area)
+                0x0000000000000001                ASSERT ((SIZEOF (.share) <= LENGTH (SHARE)), region SHARE overflowed)
 
 .nzwtext        0x0000000008010000        0x0
                 0x0000000008010000                PROVIDE (_snzw = .)
@@ -2540,128 +2549,128 @@ END GROUP
                 0x0000000000000001                ASSERT (((_enzw - _snzw) <= LENGTH (NZW)), region NZW overflowed)
 OUTPUT(CH32V203C8T6.elf elf32-littleriscv)
 
-.debug_info     0x0000000000000000    0x231d7
+.debug_info     0x0000000000000000    0x232e2
  .debug_info    0x0000000000000000     0x16a3 ./fw_app/06_App/usb_comm/app_usb_comm.o
  .debug_info    0x00000000000016a3      0xa30 ./fw_app/06_App/uart_monitor/app_uart_monitor.o
  .debug_info    0x00000000000020d3      0x727 ./fw_app/06_App/heartbeat/app_heartbeat.o
- .debug_info    0x00000000000027fa      0x8ae ./fw_app/05_Scheduler/sched_tasks/sched_tasks.o
- .debug_info    0x00000000000030a8     0x1134 ./fw_app/05_Scheduler/sched/sched.o
- .debug_info    0x00000000000041dc      0xa63 ./fw_app/04_Components/ring_buffer/ring_buffer.o
- .debug_info    0x0000000000004c3f      0x5fc ./fw_app/04_Components/log/log.o
- .debug_info    0x000000000000523b      0x654 ./fw_app/04_Components/frame/frame.o
- .debug_info    0x000000000000588f      0x6af ./fw_app/04_Components/evt/evt.o
- .debug_info    0x0000000000005f3e      0x659 ./fw_app/04_Components/CRC/crc.o
- .debug_info    0x0000000000006597     0x1802 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
- .debug_info    0x0000000000007d99      0xde5 ./fw_app/03_Driver/usb/vendor/src/usb_init.o
- .debug_info    0x0000000000008b7e      0xef1 ./fw_app/03_Driver/usb/vendor/src/usb_int.o
- .debug_info    0x0000000000009a6f      0xe81 ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
- .debug_info    0x000000000000a8f0     0x19df ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
- .debug_info    0x000000000000c2cf      0xeeb ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
- .debug_info    0x000000000000d1ba     0x1880 ./fw_app/03_Driver/usb/drv_usb.o
- .debug_info    0x000000000000ea3a      0xa68 ./fw_app/03_Driver/usb/usb_desc.o
- .debug_info    0x000000000000f4a2     0x1336 ./fw_app/03_Driver/usb/usb_endp.o
- .debug_info    0x00000000000107d8     0x10d8 ./fw_app/03_Driver/usb/usb_istr.o
- .debug_info    0x00000000000118b0     0x1941 ./fw_app/03_Driver/usb/usb_prop.o
- .debug_info    0x00000000000131f1      0xfe1 ./fw_app/03_Driver/usb/usb_pwr.o
- .debug_info    0x00000000000141d2     0x1d6b ./fw_app/03_Driver/uart/drv_uart.o
- .debug_info    0x0000000000015f3d      0xd4b ./fw_app/02_BSP/wdt/bsp_wdt.o
- .debug_info    0x0000000000016c88     0x1335 ./fw_app/02_BSP/time/bsp_time.o
- .debug_info    0x0000000000017fbd      0xb60 ./fw_app/02_BSP/gpio/bsp_gpio.o
- .debug_info    0x0000000000018b1d      0xb73 ./fw_app/02_BSP/clk/bsp_clk.o
- .debug_info    0x0000000000019690      0xf83 ./fw_app/02_BSP/board/bsp_board.o
- .debug_info    0x000000000001a613      0xc07 ./fw_app/01_Port/port/port.o
- .debug_info    0x000000000001b21a      0x892 ./fw_app/00_System/System/platform.o
- .debug_info    0x000000000001baac      0xbc0 ./User/ch32v20x_it.o
- .debug_info    0x000000000001c66c       0xb1 ./User/main.o
- .debug_info    0x000000000001c71d      0xba4 ./User/system_ch32v20x.o
- .debug_info    0x000000000001d2c1       0x22 ./Startup/startup_ch32v20x_D6.o
- .debug_info    0x000000000001d2e3      0xc0d ./Peripheral/src/ch32v20x_exti.o
- .debug_info    0x000000000001def0     0x1354 ./Peripheral/src/ch32v20x_gpio.o
- .debug_info    0x000000000001f244      0xb74 ./Peripheral/src/ch32v20x_iwdg.o
- .debug_info    0x000000000001fdb8      0xe6c ./Peripheral/src/ch32v20x_misc.o
- .debug_info    0x0000000000020c24     0x1273 ./Peripheral/src/ch32v20x_rcc.o
- .debug_info    0x0000000000021e97     0x1340 ./Peripheral/src/ch32v20x_usart.o
+ .debug_info    0x00000000000027fa      0x8bb ./fw_app/05_Scheduler/sched_tasks/sched_tasks.o
+ .debug_info    0x00000000000030b5     0x1134 ./fw_app/05_Scheduler/sched/sched.o
+ .debug_info    0x00000000000041e9      0xa63 ./fw_app/04_Components/ring_buffer/ring_buffer.o
+ .debug_info    0x0000000000004c4c      0x6e0 ./fw_app/04_Components/log/log.o
+ .debug_info    0x000000000000532c      0x654 ./fw_app/04_Components/frame/frame.o
+ .debug_info    0x0000000000005980      0x6af ./fw_app/04_Components/evt/evt.o
+ .debug_info    0x000000000000602f      0x659 ./fw_app/04_Components/CRC/crc.o
+ .debug_info    0x0000000000006688     0x1802 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+ .debug_info    0x0000000000007e8a      0xde5 ./fw_app/03_Driver/usb/vendor/src/usb_init.o
+ .debug_info    0x0000000000008c6f      0xef1 ./fw_app/03_Driver/usb/vendor/src/usb_int.o
+ .debug_info    0x0000000000009b60      0xe81 ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
+ .debug_info    0x000000000000a9e1     0x19df ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+ .debug_info    0x000000000000c3c0      0xeeb ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
+ .debug_info    0x000000000000d2ab     0x1880 ./fw_app/03_Driver/usb/drv_usb.o
+ .debug_info    0x000000000000eb2b      0xa68 ./fw_app/03_Driver/usb/usb_desc.o
+ .debug_info    0x000000000000f593     0x1336 ./fw_app/03_Driver/usb/usb_endp.o
+ .debug_info    0x00000000000108c9     0x10d8 ./fw_app/03_Driver/usb/usb_istr.o
+ .debug_info    0x00000000000119a1     0x1941 ./fw_app/03_Driver/usb/usb_prop.o
+ .debug_info    0x00000000000132e2      0xfe1 ./fw_app/03_Driver/usb/usb_pwr.o
+ .debug_info    0x00000000000142c3     0x1d6b ./fw_app/03_Driver/uart/drv_uart.o
+ .debug_info    0x000000000001602e      0xd4b ./fw_app/02_BSP/wdt/bsp_wdt.o
+ .debug_info    0x0000000000016d79     0x1335 ./fw_app/02_BSP/time/bsp_time.o
+ .debug_info    0x00000000000180ae      0xb60 ./fw_app/02_BSP/gpio/bsp_gpio.o
+ .debug_info    0x0000000000018c0e      0xb73 ./fw_app/02_BSP/clk/bsp_clk.o
+ .debug_info    0x0000000000019781      0xf83 ./fw_app/02_BSP/board/bsp_board.o
+ .debug_info    0x000000000001a704      0xc14 ./fw_app/01_Port/port/port.o
+ .debug_info    0x000000000001b318      0x89f ./fw_app/00_System/System/platform.o
+ .debug_info    0x000000000001bbb7      0xbc0 ./User/ch32v20x_it.o
+ .debug_info    0x000000000001c777       0xb1 ./User/main.o
+ .debug_info    0x000000000001c828      0xba4 ./User/system_ch32v20x.o
+ .debug_info    0x000000000001d3cc       0x22 ./Startup/startup_ch32v20x_D6.o
+ .debug_info    0x000000000001d3ee      0xc0d ./Peripheral/src/ch32v20x_exti.o
+ .debug_info    0x000000000001dffb     0x1354 ./Peripheral/src/ch32v20x_gpio.o
+ .debug_info    0x000000000001f34f      0xb74 ./Peripheral/src/ch32v20x_iwdg.o
+ .debug_info    0x000000000001fec3      0xe6c ./Peripheral/src/ch32v20x_misc.o
+ .debug_info    0x0000000000020d2f     0x1273 ./Peripheral/src/ch32v20x_rcc.o
+ .debug_info    0x0000000000021fa2     0x1340 ./Peripheral/src/ch32v20x_usart.o
 
-.debug_abbrev   0x0000000000000000     0x6bb5
+.debug_abbrev   0x0000000000000000     0x6bfb
  .debug_abbrev  0x0000000000000000      0x44d ./fw_app/06_App/usb_comm/app_usb_comm.o
  .debug_abbrev  0x000000000000044d      0x183 ./fw_app/06_App/uart_monitor/app_uart_monitor.o
  .debug_abbrev  0x00000000000005d0      0x14a ./fw_app/06_App/heartbeat/app_heartbeat.o
  .debug_abbrev  0x000000000000071a      0x1c9 ./fw_app/05_Scheduler/sched_tasks/sched_tasks.o
  .debug_abbrev  0x00000000000008e3      0x405 ./fw_app/05_Scheduler/sched/sched.o
  .debug_abbrev  0x0000000000000ce8      0x2a9 ./fw_app/04_Components/ring_buffer/ring_buffer.o
- .debug_abbrev  0x0000000000000f91      0x1a9 ./fw_app/04_Components/log/log.o
- .debug_abbrev  0x000000000000113a      0x19f ./fw_app/04_Components/frame/frame.o
- .debug_abbrev  0x00000000000012d9      0x23e ./fw_app/04_Components/evt/evt.o
- .debug_abbrev  0x0000000000001517      0x15d ./fw_app/04_Components/CRC/crc.o
- .debug_abbrev  0x0000000000001674      0x553 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
- .debug_abbrev  0x0000000000001bc7      0x223 ./fw_app/03_Driver/usb/vendor/src/usb_init.o
- .debug_abbrev  0x0000000000001dea      0x279 ./fw_app/03_Driver/usb/vendor/src/usb_int.o
- .debug_abbrev  0x0000000000002063      0x25a ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
- .debug_abbrev  0x00000000000022bd      0x3b2 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
- .debug_abbrev  0x000000000000266f      0x2a0 ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
- .debug_abbrev  0x000000000000290f      0x42b ./fw_app/03_Driver/usb/drv_usb.o
- .debug_abbrev  0x0000000000002d3a      0x1c0 ./fw_app/03_Driver/usb/usb_desc.o
- .debug_abbrev  0x0000000000002efa      0x34e ./fw_app/03_Driver/usb/usb_endp.o
- .debug_abbrev  0x0000000000003248      0x2da ./fw_app/03_Driver/usb/usb_istr.o
- .debug_abbrev  0x0000000000003522      0x4a4 ./fw_app/03_Driver/usb/usb_prop.o
- .debug_abbrev  0x00000000000039c6      0x2fa ./fw_app/03_Driver/usb/usb_pwr.o
- .debug_abbrev  0x0000000000003cc0      0x50c ./fw_app/03_Driver/uart/drv_uart.o
- .debug_abbrev  0x00000000000041cc      0x2f2 ./fw_app/02_BSP/wdt/bsp_wdt.o
- .debug_abbrev  0x00000000000044be      0x390 ./fw_app/02_BSP/time/bsp_time.o
- .debug_abbrev  0x000000000000484e      0x28c ./fw_app/02_BSP/gpio/bsp_gpio.o
- .debug_abbrev  0x0000000000004ada      0x279 ./fw_app/02_BSP/clk/bsp_clk.o
- .debug_abbrev  0x0000000000004d53      0x313 ./fw_app/02_BSP/board/bsp_board.o
- .debug_abbrev  0x0000000000005066      0x204 ./fw_app/01_Port/port/port.o
- .debug_abbrev  0x000000000000526a      0x1b7 ./fw_app/00_System/System/platform.o
- .debug_abbrev  0x0000000000005421      0x22c ./User/ch32v20x_it.o
- .debug_abbrev  0x000000000000564d       0x66 ./User/main.o
- .debug_abbrev  0x00000000000056b3      0x2e2 ./User/system_ch32v20x.o
- .debug_abbrev  0x0000000000005995       0x12 ./Startup/startup_ch32v20x_D6.o
- .debug_abbrev  0x00000000000059a7      0x2da ./Peripheral/src/ch32v20x_exti.o
- .debug_abbrev  0x0000000000005c81      0x34b ./Peripheral/src/ch32v20x_gpio.o
- .debug_abbrev  0x0000000000005fcc      0x282 ./Peripheral/src/ch32v20x_iwdg.o
- .debug_abbrev  0x000000000000624e      0x2ea ./Peripheral/src/ch32v20x_misc.o
- .debug_abbrev  0x0000000000006538      0x36b ./Peripheral/src/ch32v20x_rcc.o
- .debug_abbrev  0x00000000000068a3      0x312 ./Peripheral/src/ch32v20x_usart.o
+ .debug_abbrev  0x0000000000000f91      0x1ef ./fw_app/04_Components/log/log.o
+ .debug_abbrev  0x0000000000001180      0x19f ./fw_app/04_Components/frame/frame.o
+ .debug_abbrev  0x000000000000131f      0x23e ./fw_app/04_Components/evt/evt.o
+ .debug_abbrev  0x000000000000155d      0x15d ./fw_app/04_Components/CRC/crc.o
+ .debug_abbrev  0x00000000000016ba      0x553 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+ .debug_abbrev  0x0000000000001c0d      0x223 ./fw_app/03_Driver/usb/vendor/src/usb_init.o
+ .debug_abbrev  0x0000000000001e30      0x279 ./fw_app/03_Driver/usb/vendor/src/usb_int.o
+ .debug_abbrev  0x00000000000020a9      0x25a ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
+ .debug_abbrev  0x0000000000002303      0x3b2 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+ .debug_abbrev  0x00000000000026b5      0x2a0 ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
+ .debug_abbrev  0x0000000000002955      0x42b ./fw_app/03_Driver/usb/drv_usb.o
+ .debug_abbrev  0x0000000000002d80      0x1c0 ./fw_app/03_Driver/usb/usb_desc.o
+ .debug_abbrev  0x0000000000002f40      0x34e ./fw_app/03_Driver/usb/usb_endp.o
+ .debug_abbrev  0x000000000000328e      0x2da ./fw_app/03_Driver/usb/usb_istr.o
+ .debug_abbrev  0x0000000000003568      0x4a4 ./fw_app/03_Driver/usb/usb_prop.o
+ .debug_abbrev  0x0000000000003a0c      0x2fa ./fw_app/03_Driver/usb/usb_pwr.o
+ .debug_abbrev  0x0000000000003d06      0x50c ./fw_app/03_Driver/uart/drv_uart.o
+ .debug_abbrev  0x0000000000004212      0x2f2 ./fw_app/02_BSP/wdt/bsp_wdt.o
+ .debug_abbrev  0x0000000000004504      0x390 ./fw_app/02_BSP/time/bsp_time.o
+ .debug_abbrev  0x0000000000004894      0x28c ./fw_app/02_BSP/gpio/bsp_gpio.o
+ .debug_abbrev  0x0000000000004b20      0x279 ./fw_app/02_BSP/clk/bsp_clk.o
+ .debug_abbrev  0x0000000000004d99      0x313 ./fw_app/02_BSP/board/bsp_board.o
+ .debug_abbrev  0x00000000000050ac      0x204 ./fw_app/01_Port/port/port.o
+ .debug_abbrev  0x00000000000052b0      0x1b7 ./fw_app/00_System/System/platform.o
+ .debug_abbrev  0x0000000000005467      0x22c ./User/ch32v20x_it.o
+ .debug_abbrev  0x0000000000005693       0x66 ./User/main.o
+ .debug_abbrev  0x00000000000056f9      0x2e2 ./User/system_ch32v20x.o
+ .debug_abbrev  0x00000000000059db       0x12 ./Startup/startup_ch32v20x_D6.o
+ .debug_abbrev  0x00000000000059ed      0x2da ./Peripheral/src/ch32v20x_exti.o
+ .debug_abbrev  0x0000000000005cc7      0x34b ./Peripheral/src/ch32v20x_gpio.o
+ .debug_abbrev  0x0000000000006012      0x282 ./Peripheral/src/ch32v20x_iwdg.o
+ .debug_abbrev  0x0000000000006294      0x2ea ./Peripheral/src/ch32v20x_misc.o
+ .debug_abbrev  0x000000000000657e      0x36b ./Peripheral/src/ch32v20x_rcc.o
+ .debug_abbrev  0x00000000000068e9      0x312 ./Peripheral/src/ch32v20x_usart.o
 
-.debug_loc      0x0000000000000000     0x6b49
+.debug_loc      0x0000000000000000     0x6c43
  .debug_loc     0x0000000000000000      0x7a7 ./fw_app/06_App/usb_comm/app_usb_comm.o
  .debug_loc     0x00000000000007a7       0x21 ./fw_app/06_App/uart_monitor/app_uart_monitor.o
  .debug_loc     0x00000000000007c8       0x63 ./fw_app/06_App/heartbeat/app_heartbeat.o
  .debug_loc     0x000000000000082b       0xd1 ./fw_app/05_Scheduler/sched_tasks/sched_tasks.o
  .debug_loc     0x00000000000008fc      0xe09 ./fw_app/05_Scheduler/sched/sched.o
  .debug_loc     0x0000000000001705      0x737 ./fw_app/04_Components/ring_buffer/ring_buffer.o
- .debug_loc     0x0000000000001e3c       0x63 ./fw_app/04_Components/log/log.o
- .debug_loc     0x0000000000001e9f      0x47e ./fw_app/04_Components/frame/frame.o
- .debug_loc     0x000000000000231d      0x255 ./fw_app/04_Components/evt/evt.o
- .debug_loc     0x0000000000002572      0x42c ./fw_app/04_Components/CRC/crc.o
- .debug_loc     0x000000000000299e      0xa1e ./fw_app/03_Driver/usb/vendor/src/usb_core.o
- .debug_loc     0x00000000000033bc       0xfa ./fw_app/03_Driver/usb/vendor/src/usb_int.o
- .debug_loc     0x00000000000034b6      0x1dc ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
- .debug_loc     0x0000000000003692      0xb6f ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
- .debug_loc     0x0000000000004201       0xc4 ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
- .debug_loc     0x00000000000042c5      0x183 ./fw_app/03_Driver/usb/drv_usb.o
- .debug_loc     0x0000000000004448       0xb5 ./fw_app/03_Driver/usb/usb_endp.o
- .debug_loc     0x00000000000044fd       0x5a ./fw_app/03_Driver/usb/usb_istr.o
- .debug_loc     0x0000000000004557      0x1f6 ./fw_app/03_Driver/usb/usb_prop.o
- .debug_loc     0x000000000000474d      0x139 ./fw_app/03_Driver/usb/usb_pwr.o
- .debug_loc     0x0000000000004886      0x463 ./fw_app/03_Driver/uart/drv_uart.o
- .debug_loc     0x0000000000004ce9       0x92 ./fw_app/02_BSP/wdt/bsp_wdt.o
- .debug_loc     0x0000000000004d7b      0x101 ./fw_app/02_BSP/time/bsp_time.o
- .debug_loc     0x0000000000004e7c       0x21 ./fw_app/02_BSP/gpio/bsp_gpio.o
- .debug_loc     0x0000000000004e9d       0x13 ./fw_app/02_BSP/clk/bsp_clk.o
- .debug_loc     0x0000000000004eb0       0x13 ./fw_app/02_BSP/board/bsp_board.o
- .debug_loc     0x0000000000004ec3       0x13 ./fw_app/01_Port/port/port.o
- .debug_loc     0x0000000000004ed6      0x264 ./fw_app/00_System/System/platform.o
- .debug_loc     0x000000000000513a       0xac ./User/system_ch32v20x.o
- .debug_loc     0x00000000000051e6      0x181 ./Peripheral/src/ch32v20x_exti.o
- .debug_loc     0x0000000000005367      0x8a1 ./Peripheral/src/ch32v20x_gpio.o
- .debug_loc     0x0000000000005c08       0x68 ./Peripheral/src/ch32v20x_iwdg.o
- .debug_loc     0x0000000000005c70       0x2d ./Peripheral/src/ch32v20x_misc.o
- .debug_loc     0x0000000000005c9d      0x797 ./Peripheral/src/ch32v20x_rcc.o
- .debug_loc     0x0000000000006434      0x715 ./Peripheral/src/ch32v20x_usart.o
+ .debug_loc     0x0000000000001e3c      0x15d ./fw_app/04_Components/log/log.o
+ .debug_loc     0x0000000000001f99      0x47e ./fw_app/04_Components/frame/frame.o
+ .debug_loc     0x0000000000002417      0x255 ./fw_app/04_Components/evt/evt.o
+ .debug_loc     0x000000000000266c      0x42c ./fw_app/04_Components/CRC/crc.o
+ .debug_loc     0x0000000000002a98      0xa1e ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+ .debug_loc     0x00000000000034b6       0xfa ./fw_app/03_Driver/usb/vendor/src/usb_int.o
+ .debug_loc     0x00000000000035b0      0x1dc ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
+ .debug_loc     0x000000000000378c      0xb6f ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+ .debug_loc     0x00000000000042fb       0xc4 ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
+ .debug_loc     0x00000000000043bf      0x183 ./fw_app/03_Driver/usb/drv_usb.o
+ .debug_loc     0x0000000000004542       0xb5 ./fw_app/03_Driver/usb/usb_endp.o
+ .debug_loc     0x00000000000045f7       0x5a ./fw_app/03_Driver/usb/usb_istr.o
+ .debug_loc     0x0000000000004651      0x1f6 ./fw_app/03_Driver/usb/usb_prop.o
+ .debug_loc     0x0000000000004847      0x139 ./fw_app/03_Driver/usb/usb_pwr.o
+ .debug_loc     0x0000000000004980      0x463 ./fw_app/03_Driver/uart/drv_uart.o
+ .debug_loc     0x0000000000004de3       0x92 ./fw_app/02_BSP/wdt/bsp_wdt.o
+ .debug_loc     0x0000000000004e75      0x101 ./fw_app/02_BSP/time/bsp_time.o
+ .debug_loc     0x0000000000004f76       0x21 ./fw_app/02_BSP/gpio/bsp_gpio.o
+ .debug_loc     0x0000000000004f97       0x13 ./fw_app/02_BSP/clk/bsp_clk.o
+ .debug_loc     0x0000000000004faa       0x13 ./fw_app/02_BSP/board/bsp_board.o
+ .debug_loc     0x0000000000004fbd       0x13 ./fw_app/01_Port/port/port.o
+ .debug_loc     0x0000000000004fd0      0x264 ./fw_app/00_System/System/platform.o
+ .debug_loc     0x0000000000005234       0xac ./User/system_ch32v20x.o
+ .debug_loc     0x00000000000052e0      0x181 ./Peripheral/src/ch32v20x_exti.o
+ .debug_loc     0x0000000000005461      0x8a1 ./Peripheral/src/ch32v20x_gpio.o
+ .debug_loc     0x0000000000005d02       0x68 ./Peripheral/src/ch32v20x_iwdg.o
+ .debug_loc     0x0000000000005d6a       0x2d ./Peripheral/src/ch32v20x_misc.o
+ .debug_loc     0x0000000000005d97      0x797 ./Peripheral/src/ch32v20x_rcc.o
+ .debug_loc     0x000000000000652e      0x715 ./Peripheral/src/ch32v20x_usart.o
 
-.debug_aranges  0x0000000000000000      0xda0
+.debug_aranges  0x0000000000000000      0xdb0
  .debug_aranges
                 0x0000000000000000       0x58 ./fw_app/06_App/usb_comm/app_usb_comm.o
  .debug_aranges
@@ -2675,237 +2684,237 @@ OUTPUT(CH32V203C8T6.elf elf32-littleriscv)
  .debug_aranges
                 0x0000000000000128       0x70 ./fw_app/04_Components/ring_buffer/ring_buffer.o
  .debug_aranges
-                0x0000000000000198       0x58 ./fw_app/04_Components/log/log.o
+                0x0000000000000198       0x68 ./fw_app/04_Components/log/log.o
  .debug_aranges
-                0x00000000000001f0       0x28 ./fw_app/04_Components/frame/frame.o
+                0x0000000000000200       0x28 ./fw_app/04_Components/frame/frame.o
  .debug_aranges
-                0x0000000000000218       0x30 ./fw_app/04_Components/evt/evt.o
+                0x0000000000000228       0x30 ./fw_app/04_Components/evt/evt.o
  .debug_aranges
-                0x0000000000000248       0x60 ./fw_app/04_Components/CRC/crc.o
+                0x0000000000000258       0x60 ./fw_app/04_Components/CRC/crc.o
  .debug_aranges
-                0x00000000000002a8       0x98 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+                0x00000000000002b8       0x98 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
  .debug_aranges
-                0x0000000000000340       0x20 ./fw_app/03_Driver/usb/vendor/src/usb_init.o
+                0x0000000000000350       0x20 ./fw_app/03_Driver/usb/vendor/src/usb_init.o
  .debug_aranges
-                0x0000000000000360       0x28 ./fw_app/03_Driver/usb/vendor/src/usb_int.o
+                0x0000000000000370       0x28 ./fw_app/03_Driver/usb/vendor/src/usb_int.o
  .debug_aranges
-                0x0000000000000388       0x28 ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
+                0x0000000000000398       0x28 ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
  .debug_aranges
-                0x00000000000003b0      0x1a0 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+                0x00000000000003c0      0x1a0 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
  .debug_aranges
-                0x0000000000000550       0x30 ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
+                0x0000000000000560       0x30 ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
  .debug_aranges
-                0x0000000000000580       0x70 ./fw_app/03_Driver/usb/drv_usb.o
+                0x0000000000000590       0x70 ./fw_app/03_Driver/usb/drv_usb.o
  .debug_aranges
-                0x00000000000005f0       0x18 ./fw_app/03_Driver/usb/usb_desc.o
+                0x0000000000000600       0x18 ./fw_app/03_Driver/usb/usb_desc.o
  .debug_aranges
-                0x0000000000000608       0x40 ./fw_app/03_Driver/usb/usb_endp.o
+                0x0000000000000618       0x40 ./fw_app/03_Driver/usb/usb_endp.o
  .debug_aranges
-                0x0000000000000648       0x20 ./fw_app/03_Driver/usb/usb_istr.o
+                0x0000000000000658       0x20 ./fw_app/03_Driver/usb/usb_istr.o
  .debug_aranges
-                0x0000000000000668       0x90 ./fw_app/03_Driver/usb/usb_prop.o
+                0x0000000000000678       0x90 ./fw_app/03_Driver/usb/usb_prop.o
  .debug_aranges
-                0x00000000000006f8       0x40 ./fw_app/03_Driver/usb/usb_pwr.o
+                0x0000000000000708       0x40 ./fw_app/03_Driver/usb/usb_pwr.o
  .debug_aranges
-                0x0000000000000738       0x58 ./fw_app/03_Driver/uart/drv_uart.o
+                0x0000000000000748       0x58 ./fw_app/03_Driver/uart/drv_uart.o
  .debug_aranges
-                0x0000000000000790       0x40 ./fw_app/02_BSP/wdt/bsp_wdt.o
+                0x00000000000007a0       0x40 ./fw_app/02_BSP/wdt/bsp_wdt.o
  .debug_aranges
-                0x00000000000007d0       0x60 ./fw_app/02_BSP/time/bsp_time.o
+                0x00000000000007e0       0x60 ./fw_app/02_BSP/time/bsp_time.o
  .debug_aranges
-                0x0000000000000830       0x38 ./fw_app/02_BSP/gpio/bsp_gpio.o
+                0x0000000000000840       0x38 ./fw_app/02_BSP/gpio/bsp_gpio.o
  .debug_aranges
-                0x0000000000000868       0x38 ./fw_app/02_BSP/clk/bsp_clk.o
+                0x0000000000000878       0x38 ./fw_app/02_BSP/clk/bsp_clk.o
  .debug_aranges
-                0x00000000000008a0       0x38 ./fw_app/02_BSP/board/bsp_board.o
+                0x00000000000008b0       0x38 ./fw_app/02_BSP/board/bsp_board.o
  .debug_aranges
-                0x00000000000008d8       0x28 ./fw_app/01_Port/port/port.o
+                0x00000000000008e8       0x28 ./fw_app/01_Port/port/port.o
  .debug_aranges
-                0x0000000000000900       0x70 ./fw_app/00_System/System/platform.o
+                0x0000000000000910       0x70 ./fw_app/00_System/System/platform.o
  .debug_aranges
-                0x0000000000000970       0x28 ./User/ch32v20x_it.o
+                0x0000000000000980       0x28 ./User/ch32v20x_it.o
  .debug_aranges
-                0x0000000000000998       0x20 ./User/main.o
+                0x00000000000009a8       0x20 ./User/main.o
  .debug_aranges
-                0x00000000000009b8       0x28 ./User/system_ch32v20x.o
+                0x00000000000009c8       0x28 ./User/system_ch32v20x.o
  .debug_aranges
-                0x00000000000009e0       0x30 ./Startup/startup_ch32v20x_D6.o
+                0x00000000000009f0       0x30 ./Startup/startup_ch32v20x_D6.o
  .debug_aranges
-                0x0000000000000a10       0x50 ./Peripheral/src/ch32v20x_exti.o
+                0x0000000000000a20       0x50 ./Peripheral/src/ch32v20x_exti.o
  .debug_aranges
-                0x0000000000000a60       0xb0 ./Peripheral/src/ch32v20x_gpio.o
+                0x0000000000000a70       0xb0 ./Peripheral/src/ch32v20x_gpio.o
  .debug_aranges
-                0x0000000000000b10       0x48 ./Peripheral/src/ch32v20x_iwdg.o
+                0x0000000000000b20       0x48 ./Peripheral/src/ch32v20x_iwdg.o
  .debug_aranges
-                0x0000000000000b58       0x28 ./Peripheral/src/ch32v20x_misc.o
+                0x0000000000000b68       0x28 ./Peripheral/src/ch32v20x_misc.o
  .debug_aranges
-                0x0000000000000b80      0x130 ./Peripheral/src/ch32v20x_rcc.o
+                0x0000000000000b90      0x130 ./Peripheral/src/ch32v20x_rcc.o
  .debug_aranges
-                0x0000000000000cb0       0xf0 ./Peripheral/src/ch32v20x_usart.o
+                0x0000000000000cc0       0xf0 ./Peripheral/src/ch32v20x_usart.o
 
-.debug_ranges   0x0000000000000000     0x1298
+.debug_ranges   0x0000000000000000     0x12a8
  .debug_ranges  0x0000000000000000      0x120 ./fw_app/06_App/usb_comm/app_usb_comm.o
  .debug_ranges  0x0000000000000120       0x18 ./fw_app/06_App/uart_monitor/app_uart_monitor.o
  .debug_ranges  0x0000000000000138       0x18 ./fw_app/06_App/heartbeat/app_heartbeat.o
  .debug_ranges  0x0000000000000150       0x20 ./fw_app/05_Scheduler/sched_tasks/sched_tasks.o
  .debug_ranges  0x0000000000000170      0x160 ./fw_app/05_Scheduler/sched/sched.o
  .debug_ranges  0x00000000000002d0       0xe0 ./fw_app/04_Components/ring_buffer/ring_buffer.o
- .debug_ranges  0x00000000000003b0       0x48 ./fw_app/04_Components/log/log.o
- .debug_ranges  0x00000000000003f8       0x38 ./fw_app/04_Components/frame/frame.o
- .debug_ranges  0x0000000000000430       0x80 ./fw_app/04_Components/evt/evt.o
- .debug_ranges  0x00000000000004b0       0x50 ./fw_app/04_Components/CRC/crc.o
- .debug_ranges  0x0000000000000500      0x148 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
- .debug_ranges  0x0000000000000648       0x10 ./fw_app/03_Driver/usb/vendor/src/usb_init.o
- .debug_ranges  0x0000000000000658       0x60 ./fw_app/03_Driver/usb/vendor/src/usb_int.o
- .debug_ranges  0x00000000000006b8       0x18 ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
- .debug_ranges  0x00000000000006d0      0x338 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
- .debug_ranges  0x0000000000000a08       0x20 ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
- .debug_ranges  0x0000000000000a28       0x60 ./fw_app/03_Driver/usb/drv_usb.o
- .debug_ranges  0x0000000000000a88       0x30 ./fw_app/03_Driver/usb/usb_endp.o
- .debug_ranges  0x0000000000000ab8       0x48 ./fw_app/03_Driver/usb/usb_istr.o
- .debug_ranges  0x0000000000000b00       0x98 ./fw_app/03_Driver/usb/usb_prop.o
- .debug_ranges  0x0000000000000b98       0x30 ./fw_app/03_Driver/usb/usb_pwr.o
- .debug_ranges  0x0000000000000bc8      0x140 ./fw_app/03_Driver/uart/drv_uart.o
- .debug_ranges  0x0000000000000d08       0x48 ./fw_app/02_BSP/wdt/bsp_wdt.o
- .debug_ranges  0x0000000000000d50       0x50 ./fw_app/02_BSP/time/bsp_time.o
- .debug_ranges  0x0000000000000da0       0x28 ./fw_app/02_BSP/gpio/bsp_gpio.o
- .debug_ranges  0x0000000000000dc8       0x28 ./fw_app/02_BSP/clk/bsp_clk.o
- .debug_ranges  0x0000000000000df0       0x28 ./fw_app/02_BSP/board/bsp_board.o
- .debug_ranges  0x0000000000000e18       0x38 ./fw_app/01_Port/port/port.o
- .debug_ranges  0x0000000000000e50       0x60 ./fw_app/00_System/System/platform.o
- .debug_ranges  0x0000000000000eb0       0x18 ./User/ch32v20x_it.o
- .debug_ranges  0x0000000000000ec8       0x10 ./User/main.o
- .debug_ranges  0x0000000000000ed8       0x38 ./User/system_ch32v20x.o
- .debug_ranges  0x0000000000000f10       0x28 ./Startup/startup_ch32v20x_D6.o
- .debug_ranges  0x0000000000000f38       0x40 ./Peripheral/src/ch32v20x_exti.o
- .debug_ranges  0x0000000000000f78       0xa0 ./Peripheral/src/ch32v20x_gpio.o
- .debug_ranges  0x0000000000001018       0x38 ./Peripheral/src/ch32v20x_iwdg.o
- .debug_ranges  0x0000000000001050       0x48 ./Peripheral/src/ch32v20x_misc.o
- .debug_ranges  0x0000000000001098      0x120 ./Peripheral/src/ch32v20x_rcc.o
- .debug_ranges  0x00000000000011b8       0xe0 ./Peripheral/src/ch32v20x_usart.o
+ .debug_ranges  0x00000000000003b0       0x58 ./fw_app/04_Components/log/log.o
+ .debug_ranges  0x0000000000000408       0x38 ./fw_app/04_Components/frame/frame.o
+ .debug_ranges  0x0000000000000440       0x80 ./fw_app/04_Components/evt/evt.o
+ .debug_ranges  0x00000000000004c0       0x50 ./fw_app/04_Components/CRC/crc.o
+ .debug_ranges  0x0000000000000510      0x148 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+ .debug_ranges  0x0000000000000658       0x10 ./fw_app/03_Driver/usb/vendor/src/usb_init.o
+ .debug_ranges  0x0000000000000668       0x60 ./fw_app/03_Driver/usb/vendor/src/usb_int.o
+ .debug_ranges  0x00000000000006c8       0x18 ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
+ .debug_ranges  0x00000000000006e0      0x338 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+ .debug_ranges  0x0000000000000a18       0x20 ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
+ .debug_ranges  0x0000000000000a38       0x60 ./fw_app/03_Driver/usb/drv_usb.o
+ .debug_ranges  0x0000000000000a98       0x30 ./fw_app/03_Driver/usb/usb_endp.o
+ .debug_ranges  0x0000000000000ac8       0x48 ./fw_app/03_Driver/usb/usb_istr.o
+ .debug_ranges  0x0000000000000b10       0x98 ./fw_app/03_Driver/usb/usb_prop.o
+ .debug_ranges  0x0000000000000ba8       0x30 ./fw_app/03_Driver/usb/usb_pwr.o
+ .debug_ranges  0x0000000000000bd8      0x140 ./fw_app/03_Driver/uart/drv_uart.o
+ .debug_ranges  0x0000000000000d18       0x48 ./fw_app/02_BSP/wdt/bsp_wdt.o
+ .debug_ranges  0x0000000000000d60       0x50 ./fw_app/02_BSP/time/bsp_time.o
+ .debug_ranges  0x0000000000000db0       0x28 ./fw_app/02_BSP/gpio/bsp_gpio.o
+ .debug_ranges  0x0000000000000dd8       0x28 ./fw_app/02_BSP/clk/bsp_clk.o
+ .debug_ranges  0x0000000000000e00       0x28 ./fw_app/02_BSP/board/bsp_board.o
+ .debug_ranges  0x0000000000000e28       0x38 ./fw_app/01_Port/port/port.o
+ .debug_ranges  0x0000000000000e60       0x60 ./fw_app/00_System/System/platform.o
+ .debug_ranges  0x0000000000000ec0       0x18 ./User/ch32v20x_it.o
+ .debug_ranges  0x0000000000000ed8       0x10 ./User/main.o
+ .debug_ranges  0x0000000000000ee8       0x38 ./User/system_ch32v20x.o
+ .debug_ranges  0x0000000000000f20       0x28 ./Startup/startup_ch32v20x_D6.o
+ .debug_ranges  0x0000000000000f48       0x40 ./Peripheral/src/ch32v20x_exti.o
+ .debug_ranges  0x0000000000000f88       0xa0 ./Peripheral/src/ch32v20x_gpio.o
+ .debug_ranges  0x0000000000001028       0x38 ./Peripheral/src/ch32v20x_iwdg.o
+ .debug_ranges  0x0000000000001060       0x48 ./Peripheral/src/ch32v20x_misc.o
+ .debug_ranges  0x00000000000010a8      0x120 ./Peripheral/src/ch32v20x_rcc.o
+ .debug_ranges  0x00000000000011c8       0xe0 ./Peripheral/src/ch32v20x_usart.o
 
-.debug_line     0x0000000000000000    0x13a92
+.debug_line     0x0000000000000000    0x13cc6
  .debug_line    0x0000000000000000      0xe02 ./fw_app/06_App/usb_comm/app_usb_comm.o
  .debug_line    0x0000000000000e02      0x30d ./fw_app/06_App/uart_monitor/app_uart_monitor.o
  .debug_line    0x000000000000110f      0x2de ./fw_app/06_App/heartbeat/app_heartbeat.o
  .debug_line    0x00000000000013ed      0x3c8 ./fw_app/05_Scheduler/sched_tasks/sched_tasks.o
  .debug_line    0x00000000000017b5     0x1224 ./fw_app/05_Scheduler/sched/sched.o
  .debug_line    0x00000000000029d9      0xb10 ./fw_app/04_Components/ring_buffer/ring_buffer.o
- .debug_line    0x00000000000034e9      0x553 ./fw_app/04_Components/log/log.o
- .debug_line    0x0000000000003a3c      0x506 ./fw_app/04_Components/frame/frame.o
- .debug_line    0x0000000000003f42      0x600 ./fw_app/04_Components/evt/evt.o
- .debug_line    0x0000000000004542      0x5c0 ./fw_app/04_Components/CRC/crc.o
- .debug_line    0x0000000000004b02     0x1a66 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
- .debug_line    0x0000000000006568      0x2ed ./fw_app/03_Driver/usb/vendor/src/usb_init.o
- .debug_line    0x0000000000006855      0x936 ./fw_app/03_Driver/usb/vendor/src/usb_int.o
- .debug_line    0x000000000000718b      0x413 ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
- .debug_line    0x000000000000759e     0x1188 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
- .debug_line    0x0000000000008726      0x383 ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
- .debug_line    0x0000000000008aa9      0xa13 ./fw_app/03_Driver/usb/drv_usb.o
- .debug_line    0x00000000000094bc      0x208 ./fw_app/03_Driver/usb/usb_desc.o
- .debug_line    0x00000000000096c4      0x4c8 ./fw_app/03_Driver/usb/usb_endp.o
- .debug_line    0x0000000000009b8c      0x784 ./fw_app/03_Driver/usb/usb_istr.o
- .debug_line    0x000000000000a310      0xb13 ./fw_app/03_Driver/usb/usb_prop.o
- .debug_line    0x000000000000ae23      0x7e4 ./fw_app/03_Driver/usb/usb_pwr.o
- .debug_line    0x000000000000b607      0xfeb ./fw_app/03_Driver/uart/drv_uart.o
- .debug_line    0x000000000000c5f2      0x4a9 ./fw_app/02_BSP/wdt/bsp_wdt.o
- .debug_line    0x000000000000ca9b      0x760 ./fw_app/02_BSP/time/bsp_time.o
- .debug_line    0x000000000000d1fb      0x31d ./fw_app/02_BSP/gpio/bsp_gpio.o
- .debug_line    0x000000000000d518      0x3ab ./fw_app/02_BSP/clk/bsp_clk.o
- .debug_line    0x000000000000d8c3      0x63b ./fw_app/02_BSP/board/bsp_board.o
- .debug_line    0x000000000000defe      0x65f ./fw_app/01_Port/port/port.o
- .debug_line    0x000000000000e55d      0x547 ./fw_app/00_System/System/platform.o
- .debug_line    0x000000000000eaa4      0x2a3 ./User/ch32v20x_it.o
- .debug_line    0x000000000000ed47       0xb0 ./User/main.o
- .debug_line    0x000000000000edf7      0x7ca ./User/system_ch32v20x.o
- .debug_line    0x000000000000f5c1      0x121 ./Startup/startup_ch32v20x_D6.o
- .debug_line    0x000000000000f6e2      0x5d4 ./Peripheral/src/ch32v20x_exti.o
- .debug_line    0x000000000000fcb6     0x1609 ./Peripheral/src/ch32v20x_gpio.o
- .debug_line    0x00000000000112bf      0x3f3 ./Peripheral/src/ch32v20x_iwdg.o
- .debug_line    0x00000000000116b2      0x3db ./Peripheral/src/ch32v20x_misc.o
- .debug_line    0x0000000000011a8d     0x1191 ./Peripheral/src/ch32v20x_rcc.o
- .debug_line    0x0000000000012c1e      0xe74 ./Peripheral/src/ch32v20x_usart.o
+ .debug_line    0x00000000000034e9      0x787 ./fw_app/04_Components/log/log.o
+ .debug_line    0x0000000000003c70      0x506 ./fw_app/04_Components/frame/frame.o
+ .debug_line    0x0000000000004176      0x600 ./fw_app/04_Components/evt/evt.o
+ .debug_line    0x0000000000004776      0x5c0 ./fw_app/04_Components/CRC/crc.o
+ .debug_line    0x0000000000004d36     0x1a66 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+ .debug_line    0x000000000000679c      0x2ed ./fw_app/03_Driver/usb/vendor/src/usb_init.o
+ .debug_line    0x0000000000006a89      0x936 ./fw_app/03_Driver/usb/vendor/src/usb_int.o
+ .debug_line    0x00000000000073bf      0x413 ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
+ .debug_line    0x00000000000077d2     0x1188 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+ .debug_line    0x000000000000895a      0x383 ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
+ .debug_line    0x0000000000008cdd      0xa13 ./fw_app/03_Driver/usb/drv_usb.o
+ .debug_line    0x00000000000096f0      0x208 ./fw_app/03_Driver/usb/usb_desc.o
+ .debug_line    0x00000000000098f8      0x4c8 ./fw_app/03_Driver/usb/usb_endp.o
+ .debug_line    0x0000000000009dc0      0x784 ./fw_app/03_Driver/usb/usb_istr.o
+ .debug_line    0x000000000000a544      0xb13 ./fw_app/03_Driver/usb/usb_prop.o
+ .debug_line    0x000000000000b057      0x7e4 ./fw_app/03_Driver/usb/usb_pwr.o
+ .debug_line    0x000000000000b83b      0xfeb ./fw_app/03_Driver/uart/drv_uart.o
+ .debug_line    0x000000000000c826      0x4a9 ./fw_app/02_BSP/wdt/bsp_wdt.o
+ .debug_line    0x000000000000cccf      0x760 ./fw_app/02_BSP/time/bsp_time.o
+ .debug_line    0x000000000000d42f      0x31d ./fw_app/02_BSP/gpio/bsp_gpio.o
+ .debug_line    0x000000000000d74c      0x3ab ./fw_app/02_BSP/clk/bsp_clk.o
+ .debug_line    0x000000000000daf7      0x63b ./fw_app/02_BSP/board/bsp_board.o
+ .debug_line    0x000000000000e132      0x65f ./fw_app/01_Port/port/port.o
+ .debug_line    0x000000000000e791      0x547 ./fw_app/00_System/System/platform.o
+ .debug_line    0x000000000000ecd8      0x2a3 ./User/ch32v20x_it.o
+ .debug_line    0x000000000000ef7b       0xb0 ./User/main.o
+ .debug_line    0x000000000000f02b      0x7ca ./User/system_ch32v20x.o
+ .debug_line    0x000000000000f7f5      0x121 ./Startup/startup_ch32v20x_D6.o
+ .debug_line    0x000000000000f916      0x5d4 ./Peripheral/src/ch32v20x_exti.o
+ .debug_line    0x000000000000feea     0x1609 ./Peripheral/src/ch32v20x_gpio.o
+ .debug_line    0x00000000000114f3      0x3f3 ./Peripheral/src/ch32v20x_iwdg.o
+ .debug_line    0x00000000000118e6      0x3db ./Peripheral/src/ch32v20x_misc.o
+ .debug_line    0x0000000000011cc1     0x1191 ./Peripheral/src/ch32v20x_rcc.o
+ .debug_line    0x0000000000012e52      0xe74 ./Peripheral/src/ch32v20x_usart.o
 
-.debug_str      0x0000000000000000     0x43fd
+.debug_str      0x0000000000000000     0x4427
  .debug_str     0x0000000000000000      0x918 ./fw_app/06_App/usb_comm/app_usb_comm.o
                                         0x9d7 (size before relaxing)
  .debug_str     0x0000000000000918       0x60 ./fw_app/06_App/uart_monitor/app_uart_monitor.o
                                         0x78b (size before relaxing)
  .debug_str     0x0000000000000978       0xcd ./fw_app/06_App/heartbeat/app_heartbeat.o
                                         0x5be (size before relaxing)
- .debug_str     0x0000000000000a45      0x123 ./fw_app/05_Scheduler/sched_tasks/sched_tasks.o
-                                        0x629 (size before relaxing)
- .debug_str     0x0000000000000b68      0x173 ./fw_app/05_Scheduler/sched/sched.o
+ .debug_str     0x0000000000000a45      0x129 ./fw_app/05_Scheduler/sched_tasks/sched_tasks.o
+                                        0x62f (size before relaxing)
+ .debug_str     0x0000000000000b6e      0x173 ./fw_app/05_Scheduler/sched/sched.o
                                         0x675 (size before relaxing)
- .debug_str     0x0000000000000cdb       0xa1 ./fw_app/04_Components/ring_buffer/ring_buffer.o
+ .debug_str     0x0000000000000ce1       0xa1 ./fw_app/04_Components/ring_buffer/ring_buffer.o
                                         0x3be (size before relaxing)
- .debug_str     0x0000000000000d7c      0x181 ./fw_app/04_Components/log/log.o
-                                        0x57b (size before relaxing)
- .debug_str     0x0000000000000efd       0xd8 ./fw_app/04_Components/frame/frame.o
+ .debug_str     0x0000000000000d82      0x1a5 ./fw_app/04_Components/log/log.o
+                                        0x5a5 (size before relaxing)
+ .debug_str     0x0000000000000f27       0xd8 ./fw_app/04_Components/frame/frame.o
                                         0x444 (size before relaxing)
- .debug_str     0x0000000000000fd5       0xab ./fw_app/04_Components/evt/evt.o
+ .debug_str     0x0000000000000fff       0xab ./fw_app/04_Components/evt/evt.o
                                         0x436 (size before relaxing)
- .debug_str     0x0000000000001080       0xdd ./fw_app/04_Components/CRC/crc.o
+ .debug_str     0x00000000000010aa       0xdd ./fw_app/04_Components/CRC/crc.o
                                         0x31c (size before relaxing)
- .debug_str     0x000000000000115d      0xc3f ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+ .debug_str     0x0000000000001187      0xc3f ./fw_app/03_Driver/usb/vendor/src/usb_core.o
                                         0xf74 (size before relaxing)
- .debug_str     0x0000000000001d9c       0x37 ./fw_app/03_Driver/usb/vendor/src/usb_init.o
+ .debug_str     0x0000000000001dc6       0x37 ./fw_app/03_Driver/usb/vendor/src/usb_init.o
                                         0x9e1 (size before relaxing)
- .debug_str     0x0000000000001dd3       0x6d ./fw_app/03_Driver/usb/vendor/src/usb_int.o
+ .debug_str     0x0000000000001dfd       0x6d ./fw_app/03_Driver/usb/vendor/src/usb_int.o
                                         0xa3f (size before relaxing)
- .debug_str     0x0000000000001e40       0x5d ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
+ .debug_str     0x0000000000001e6a       0x5d ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
                                         0xa2f (size before relaxing)
- .debug_str     0x0000000000001e9d      0x38e ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+ .debug_str     0x0000000000001ec7      0x38e ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
                                         0xdb7 (size before relaxing)
- .debug_str     0x000000000000222b       0x83 ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
+ .debug_str     0x0000000000002255       0x83 ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
                                         0xa87 (size before relaxing)
- .debug_str     0x00000000000022ae      0x682 ./fw_app/03_Driver/usb/drv_usb.o
+ .debug_str     0x00000000000022d8      0x682 ./fw_app/03_Driver/usb/drv_usb.o
                                        0x1315 (size before relaxing)
- .debug_str     0x0000000000002930       0x98 ./fw_app/03_Driver/usb/usb_desc.o
+ .debug_str     0x000000000000295a       0x98 ./fw_app/03_Driver/usb/usb_desc.o
                                         0x627 (size before relaxing)
- .debug_str     0x00000000000029c8       0x7e ./fw_app/03_Driver/usb/usb_endp.o
+ .debug_str     0x00000000000029f2       0x7e ./fw_app/03_Driver/usb/usb_endp.o
                                         0xd9c (size before relaxing)
- .debug_str     0x0000000000002a46       0xd1 ./fw_app/03_Driver/usb/usb_istr.o
+ .debug_str     0x0000000000002a70       0xd1 ./fw_app/03_Driver/usb/usb_istr.o
                                         0xc46 (size before relaxing)
- .debug_str     0x0000000000002b17      0x1a4 ./fw_app/03_Driver/usb/usb_prop.o
+ .debug_str     0x0000000000002b41      0x1a4 ./fw_app/03_Driver/usb/usb_prop.o
                                        0x1099 (size before relaxing)
- .debug_str     0x0000000000002cbb       0x65 ./fw_app/03_Driver/usb/usb_pwr.o
+ .debug_str     0x0000000000002ce5       0x65 ./fw_app/03_Driver/usb/usb_pwr.o
                                         0xb5a (size before relaxing)
- .debug_str     0x0000000000002d20      0x4b7 ./fw_app/03_Driver/uart/drv_uart.o
+ .debug_str     0x0000000000002d4a      0x4b7 ./fw_app/03_Driver/uart/drv_uart.o
                                        0x1296 (size before relaxing)
- .debug_str     0x00000000000031d7      0x10d ./fw_app/02_BSP/wdt/bsp_wdt.o
+ .debug_str     0x0000000000003201      0x10d ./fw_app/02_BSP/wdt/bsp_wdt.o
                                         0x833 (size before relaxing)
- .debug_str     0x00000000000032e4      0x1e1 ./fw_app/02_BSP/time/bsp_time.o
+ .debug_str     0x000000000000330e      0x1e1 ./fw_app/02_BSP/time/bsp_time.o
                                         0xd36 (size before relaxing)
- .debug_str     0x00000000000034c5       0x5f ./fw_app/02_BSP/gpio/bsp_gpio.o
+ .debug_str     0x00000000000034ef       0x5f ./fw_app/02_BSP/gpio/bsp_gpio.o
                                         0x6e8 (size before relaxing)
- .debug_str     0x0000000000003524       0x70 ./fw_app/02_BSP/clk/bsp_clk.o
+ .debug_str     0x000000000000354e       0x70 ./fw_app/02_BSP/clk/bsp_clk.o
                                         0x70c (size before relaxing)
- .debug_str     0x0000000000003594      0x14b ./fw_app/02_BSP/board/bsp_board.o
+ .debug_str     0x00000000000035be      0x14b ./fw_app/02_BSP/board/bsp_board.o
                                         0xa0d (size before relaxing)
- .debug_str     0x00000000000036df       0x58 ./fw_app/01_Port/port/port.o
-                                        0x812 (size before relaxing)
- .debug_str     0x0000000000003737       0xc2 ./fw_app/00_System/System/platform.o
-                                        0x65c (size before relaxing)
- .debug_str     0x00000000000037f9       0x45 ./User/ch32v20x_it.o
+ .debug_str     0x0000000000003709       0x58 ./fw_app/01_Port/port/port.o
+                                        0x818 (size before relaxing)
+ .debug_str     0x0000000000003761       0xc2 ./fw_app/00_System/System/platform.o
+                                        0x662 (size before relaxing)
+ .debug_str     0x0000000000003823       0x45 ./User/ch32v20x_it.o
                                         0x680 (size before relaxing)
- .debug_str     0x000000000000383e       0x14 ./User/main.o
+ .debug_str     0x0000000000003868       0x14 ./User/main.o
                                         0x195 (size before relaxing)
- .debug_str     0x0000000000003852       0xfa ./User/system_ch32v20x.o
+ .debug_str     0x000000000000387c       0xfa ./User/system_ch32v20x.o
                                         0x6e4 (size before relaxing)
- .debug_str     0x000000000000394c       0x2d ./Startup/startup_ch32v20x_D6.o
+ .debug_str     0x0000000000003976       0x2d ./Startup/startup_ch32v20x_D6.o
                                          0x64 (size before relaxing)
- .debug_str     0x0000000000003979       0xe4 ./Peripheral/src/ch32v20x_exti.o
+ .debug_str     0x00000000000039a3       0xe4 ./Peripheral/src/ch32v20x_exti.o
                                         0x788 (size before relaxing)
- .debug_str     0x0000000000003a5d      0x283 ./Peripheral/src/ch32v20x_gpio.o
+ .debug_str     0x0000000000003a87      0x283 ./Peripheral/src/ch32v20x_gpio.o
                                         0x9b7 (size before relaxing)
- .debug_str     0x0000000000003ce0       0x76 ./Peripheral/src/ch32v20x_iwdg.o
+ .debug_str     0x0000000000003d0a       0x76 ./Peripheral/src/ch32v20x_iwdg.o
                                         0x6ff (size before relaxing)
- .debug_str     0x0000000000003d56       0x69 ./Peripheral/src/ch32v20x_misc.o
+ .debug_str     0x0000000000003d80       0x69 ./Peripheral/src/ch32v20x_misc.o
                                         0xa79 (size before relaxing)
- .debug_str     0x0000000000003dbf      0x306 ./Peripheral/src/ch32v20x_rcc.o
+ .debug_str     0x0000000000003de9      0x306 ./Peripheral/src/ch32v20x_rcc.o
                                         0xac9 (size before relaxing)
- .debug_str     0x00000000000040c5      0x338 ./Peripheral/src/ch32v20x_usart.o
+ .debug_str     0x00000000000040ef      0x338 ./Peripheral/src/ch32v20x_usart.o
                                         0xae5 (size before relaxing)
 
 .comment        0x0000000000000000       0x33
@@ -2950,43 +2959,43 @@ OUTPUT(CH32V203C8T6.elf elf32-littleriscv)
  .comment       0x0000000000000033       0x34 ./Peripheral/src/ch32v20x_rcc.o
  .comment       0x0000000000000033       0x34 ./Peripheral/src/ch32v20x_usart.o
 
-.debug_frame    0x0000000000000000     0x1e7c
+.debug_frame    0x0000000000000000     0x1ee4
  .debug_frame   0x0000000000000000      0x138 ./fw_app/06_App/usb_comm/app_usb_comm.o
  .debug_frame   0x0000000000000138       0x3c ./fw_app/06_App/uart_monitor/app_uart_monitor.o
  .debug_frame   0x0000000000000174       0x3c ./fw_app/06_App/heartbeat/app_heartbeat.o
  .debug_frame   0x00000000000001b0       0x58 ./fw_app/05_Scheduler/sched_tasks/sched_tasks.o
  .debug_frame   0x0000000000000208      0x160 ./fw_app/05_Scheduler/sched/sched.o
  .debug_frame   0x0000000000000368       0xd8 ./fw_app/04_Components/ring_buffer/ring_buffer.o
- .debug_frame   0x0000000000000440       0x9c ./fw_app/04_Components/log/log.o
- .debug_frame   0x00000000000004dc       0x84 ./fw_app/04_Components/frame/frame.o
- .debug_frame   0x0000000000000560       0x70 ./fw_app/04_Components/evt/evt.o
- .debug_frame   0x00000000000005d0      0x11c ./fw_app/04_Components/CRC/crc.o
- .debug_frame   0x00000000000006ec      0x204 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
- .debug_frame   0x00000000000008f0       0x2c ./fw_app/03_Driver/usb/vendor/src/usb_init.o
- .debug_frame   0x000000000000091c       0x78 ./fw_app/03_Driver/usb/vendor/src/usb_int.o
- .debug_frame   0x0000000000000994       0x30 ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
- .debug_frame   0x00000000000009c4      0x438 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
- .debug_frame   0x0000000000000dfc       0x68 ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
- .debug_frame   0x0000000000000e64      0x124 ./fw_app/03_Driver/usb/drv_usb.o
- .debug_frame   0x0000000000000f88       0x8c ./fw_app/03_Driver/usb/usb_endp.o
- .debug_frame   0x0000000000001014       0x3c ./fw_app/03_Driver/usb/usb_istr.o
- .debug_frame   0x0000000000001050      0x174 ./fw_app/03_Driver/usb/usb_prop.o
- .debug_frame   0x00000000000011c4       0x88 ./fw_app/03_Driver/usb/usb_pwr.o
- .debug_frame   0x000000000000124c      0x104 ./fw_app/03_Driver/uart/drv_uart.o
- .debug_frame   0x0000000000001350       0x8c ./fw_app/02_BSP/wdt/bsp_wdt.o
- .debug_frame   0x00000000000013dc       0xb8 ./fw_app/02_BSP/time/bsp_time.o
- .debug_frame   0x0000000000001494       0x50 ./fw_app/02_BSP/gpio/bsp_gpio.o
- .debug_frame   0x00000000000014e4       0x68 ./fw_app/02_BSP/clk/bsp_clk.o
- .debug_frame   0x000000000000154c       0x60 ./fw_app/02_BSP/board/bsp_board.o
- .debug_frame   0x00000000000015ac       0x5c ./fw_app/01_Port/port/port.o
- .debug_frame   0x0000000000001608       0xe8 ./fw_app/00_System/System/platform.o
- .debug_frame   0x00000000000016f0       0x30 ./User/ch32v20x_it.o
- .debug_frame   0x0000000000001720       0x28 ./User/main.o
- .debug_frame   0x0000000000001748       0x3c ./User/system_ch32v20x.o
- .debug_frame   0x0000000000001784       0x90 ./Peripheral/src/ch32v20x_exti.o
- .debug_frame   0x0000000000001814      0x170 ./Peripheral/src/ch32v20x_gpio.o
- .debug_frame   0x0000000000001984       0x70 ./Peripheral/src/ch32v20x_iwdg.o
- .debug_frame   0x00000000000019f4       0x30 ./Peripheral/src/ch32v20x_misc.o
- .debug_frame   0x0000000000001a24      0x254 ./Peripheral/src/ch32v20x_rcc.o
- .debug_frame   0x0000000000001c78      0x1e4 ./Peripheral/src/ch32v20x_usart.o
- .debug_frame   0x0000000000001e5c       0x20 e:/wch_ide_yh/mounriver_studio/toolchain/risc-v embedded gcc/bin/../lib/gcc/riscv-none-embed/8.2.0/../../../../riscv-none-embed/lib/rv32imacxw/ilp32\libg_nano.a(lib_a-memcpy.o)
+ .debug_frame   0x0000000000000440      0x104 ./fw_app/04_Components/log/log.o
+ .debug_frame   0x0000000000000544       0x84 ./fw_app/04_Components/frame/frame.o
+ .debug_frame   0x00000000000005c8       0x70 ./fw_app/04_Components/evt/evt.o
+ .debug_frame   0x0000000000000638      0x11c ./fw_app/04_Components/CRC/crc.o
+ .debug_frame   0x0000000000000754      0x204 ./fw_app/03_Driver/usb/vendor/src/usb_core.o
+ .debug_frame   0x0000000000000958       0x2c ./fw_app/03_Driver/usb/vendor/src/usb_init.o
+ .debug_frame   0x0000000000000984       0x78 ./fw_app/03_Driver/usb/vendor/src/usb_int.o
+ .debug_frame   0x00000000000009fc       0x30 ./fw_app/03_Driver/usb/vendor/src/usb_mem.o
+ .debug_frame   0x0000000000000a2c      0x438 ./fw_app/03_Driver/usb/vendor/src/usb_regs.o
+ .debug_frame   0x0000000000000e64       0x68 ./fw_app/03_Driver/usb/vendor/src/usb_sil.o
+ .debug_frame   0x0000000000000ecc      0x124 ./fw_app/03_Driver/usb/drv_usb.o
+ .debug_frame   0x0000000000000ff0       0x8c ./fw_app/03_Driver/usb/usb_endp.o
+ .debug_frame   0x000000000000107c       0x3c ./fw_app/03_Driver/usb/usb_istr.o
+ .debug_frame   0x00000000000010b8      0x174 ./fw_app/03_Driver/usb/usb_prop.o
+ .debug_frame   0x000000000000122c       0x88 ./fw_app/03_Driver/usb/usb_pwr.o
+ .debug_frame   0x00000000000012b4      0x104 ./fw_app/03_Driver/uart/drv_uart.o
+ .debug_frame   0x00000000000013b8       0x8c ./fw_app/02_BSP/wdt/bsp_wdt.o
+ .debug_frame   0x0000000000001444       0xb8 ./fw_app/02_BSP/time/bsp_time.o
+ .debug_frame   0x00000000000014fc       0x50 ./fw_app/02_BSP/gpio/bsp_gpio.o
+ .debug_frame   0x000000000000154c       0x68 ./fw_app/02_BSP/clk/bsp_clk.o
+ .debug_frame   0x00000000000015b4       0x60 ./fw_app/02_BSP/board/bsp_board.o
+ .debug_frame   0x0000000000001614       0x5c ./fw_app/01_Port/port/port.o
+ .debug_frame   0x0000000000001670       0xe8 ./fw_app/00_System/System/platform.o
+ .debug_frame   0x0000000000001758       0x30 ./User/ch32v20x_it.o
+ .debug_frame   0x0000000000001788       0x28 ./User/main.o
+ .debug_frame   0x00000000000017b0       0x3c ./User/system_ch32v20x.o
+ .debug_frame   0x00000000000017ec       0x90 ./Peripheral/src/ch32v20x_exti.o
+ .debug_frame   0x000000000000187c      0x170 ./Peripheral/src/ch32v20x_gpio.o
+ .debug_frame   0x00000000000019ec       0x70 ./Peripheral/src/ch32v20x_iwdg.o
+ .debug_frame   0x0000000000001a5c       0x30 ./Peripheral/src/ch32v20x_misc.o
+ .debug_frame   0x0000000000001a8c      0x254 ./Peripheral/src/ch32v20x_rcc.o
+ .debug_frame   0x0000000000001ce0      0x1e4 ./Peripheral/src/ch32v20x_usart.o
+ .debug_frame   0x0000000000001ec4       0x20 e:/wch_ide_yh/mounriver_studio/toolchain/risc-v embedded gcc/bin/../lib/gcc/riscv-none-embed/8.2.0/../../../../riscv-none-embed/lib/rv32imacxw/ilp32\libg_nano.a(lib_a-memcpy.o)

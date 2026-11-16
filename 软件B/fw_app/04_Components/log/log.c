@@ -20,8 +20,40 @@ typedef struct
 
 static log_daily_t s_daily[LOG_DAILY_DEPTH];/*日常日志的 RAM 数组*/
 static uint8_t s_daily_count;               /*当前已经攒了多少条*/
-/*全局唯一的一条紧急记录*/
-volatile log_emergency_t g_log_emergency;   /*定义在 .bss，上电由启动代码清零,现在它不在 NOINIT 段，复位后会被清零*/
+/*全局唯一的一条紧急记录。不赋初值，否则会离开 .share。*/
+volatile log_emergency_t g_log_emergency __attribute__((section(".share")));
+
+/*前面各字段按字节相加，再取反码。*/
+static uint8_t log_em_digest(void)
+{
+    uint8_t sum;
+
+    sum = g_log_emergency.flag;
+    sum = (uint8_t)(sum + g_log_emergency.module);
+    sum = (uint8_t)(sum + (uint8_t)g_log_emergency.arg);
+    sum = (uint8_t)(sum + (uint8_t)(g_log_emergency.arg >> 8));
+    sum = (uint8_t)(sum + (uint8_t)g_log_emergency.code);
+    sum = (uint8_t)(sum + (uint8_t)(g_log_emergency.code >> 8));
+    sum = (uint8_t)(sum + (uint8_t)(g_log_emergency.code >> 16));
+    sum = (uint8_t)(sum + (uint8_t)(g_log_emergency.code >> 24));
+    sum = (uint8_t)(sum + (uint8_t)g_log_emergency.extra);
+    sum = (uint8_t)(sum + (uint8_t)(g_log_emergency.extra >> 8));
+    sum = (uint8_t)(sum + (uint8_t)(g_log_emergency.extra >> 16));
+    sum = (uint8_t)(sum + (uint8_t)(g_log_emergency.extra >> 24));
+    return (uint8_t)(~sum);
+}
+
+static void log_em_seal(void)
+{
+    g_log_emergency.check = log_em_digest();
+}
+
+/*标志是 0xA5 并且反码对得上，才算有一条待写记录。*/
+static uint8_t log_em_ok(void)
+{
+    return (g_log_emergency.flag == LOG_EMERGENCY_FLAG) &&
+           (g_log_emergency.check == log_em_digest());
+}
 
 /*Flash 写入占位*/
 static result_t flash_write_daily(void)
@@ -38,7 +70,7 @@ static result_t flash_write_emergency(void)
 /* 上电第一件事。标志有效才去碰 FLASH */
 static result_t log_boot(void)
 {
-    if (g_log_emergency.flag != LOG_EMERGENCY_FLAG) /* 没有待写记录：不碰 Flash，直接成功。 */
+    if (log_em_ok() == 0u) /* 没有待写记录：不碰 Flash，直接成功。 */
     {
         return RES_OK;
     }
@@ -82,6 +114,7 @@ static result_t log_emergency(uint32_t code, uint32_t extra)
     g_log_emergency.module = 0u;
     g_log_emergency.arg = 0u;
     g_log_emergency.flag = LOG_EMERGENCY_FLAG;
+    log_em_seal();
     return RES_OK;
 }
 
@@ -89,7 +122,7 @@ static result_t log_emergency(uint32_t code, uint32_t extra)
 static result_t log_stuck(uint8_t task_id, uint32_t elapsed_ms)
 {
     /* 已有别的紧急记录：保留它，不覆盖。 */
-    if (g_log_emergency.flag == LOG_EMERGENCY_FLAG &&
+    if ((log_em_ok() != 0u) &&
         g_log_emergency.code != (uint32_t)PLAT_ERR_SCHED_STUCK)
     {
         return RES_BUSY;
@@ -99,18 +132,20 @@ static result_t log_stuck(uint8_t task_id, uint32_t elapsed_ms)
     g_log_emergency.arg = (elapsed_ms > 0xFFFFu) ? 0xFFFFu : (uint16_t)elapsed_ms;
     g_log_emergency.extra = elapsed_ms;
     g_log_emergency.code = (uint32_t)PLAT_ERR_SCHED_STUCK;
-    /* 标志最后写。 */
+    /* 标志和反码最后写。 */
     g_log_emergency.flag = LOG_EMERGENCY_FLAG;
+    log_em_seal();
     return RES_OK;
 }
 
 /*任务后来返回了，撤掉“卡住”这条记录*/
 static result_t log_stuck_clear(void)
 {
-    if (g_log_emergency.flag == LOG_EMERGENCY_FLAG &&
+    if ((log_em_ok() != 0u) &&
         g_log_emergency.code == (uint32_t)PLAT_ERR_SCHED_STUCK)
     {
         g_log_emergency.flag = 0u;
+        log_em_seal();
     }
     return RES_OK;
 }
@@ -142,7 +177,7 @@ static result_t log_flush_emergency(void)
 {
     result_t rc;
 
-    if (g_log_emergency.flag != LOG_EMERGENCY_FLAG)
+    if (log_em_ok() == 0u)
     {
         return RES_OK;
     }
@@ -150,6 +185,7 @@ static result_t log_flush_emergency(void)
     if (rc == RES_OK)
     {
         g_log_emergency.flag = 0u;
+        log_em_seal();
         return RES_OK;
     }
     if (rc != RES_STATE)

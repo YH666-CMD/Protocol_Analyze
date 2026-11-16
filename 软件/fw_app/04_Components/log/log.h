@@ -8,8 +8,8 @@
  * 约定：
  *   1. 日常日志先留在 RAM。日志任务周期到了再尝试写入 FLASH。
  *   2. 紧急日志由看门狗钩子或节拍中断直接写入 g_log_emergency，不依赖调度器还活着。
- *   3. g_log_emergency 第一个字节是标志。上电后第一件事看这个标志，要写再进 FLASH。
- *   4. 这块 RAM 以后要放进复位不清零的段。现在还在普通 bss 里，复位后标志会丢。
+ *   3. g_log_emergency 放在 .share。软复位不清它。冷上电是随机数，check 对不上就当没有记录。
+ *   4. 第一个字节是标志。上电后第一件事看标志和校验，要写再进 FLASH。
  *   5. 分区没划出来之前，空的 FLASH 函数返回 RES_STATE，不清 RAM，也不当成故障。
  */
 #ifndef FW_APP_04_COMPONENTS_LOG_LOG_H_
@@ -25,9 +25,10 @@ typedef struct
     uint16_t arg;    /* 任务没返回时是已经过去的毫秒，超过 65535 就记满 */
     uint32_t code;   /* 故障码。任务没返回时是 PLAT_ERR_SCHED_STUCK */
     uint32_t extra;  /* 看门狗传入的附加参数，或卡住时的完整毫秒数 */
+    uint8_t  check;  /* 前面各字段字节之和的反码。最后写。对不上就当这条是空的 */
 } log_emergency_t;
 
-/*全局唯一的一条紧急记录。链接脚本划出 NOINIT 之前不要把它初始化清掉。 */
+/* 全局唯一的一条紧急记录。放在 .share，启动代码不清它，也不要在定义时赋初值。 */
 extern volatile log_emergency_t g_log_emergency;
 
 typedef struct
@@ -57,7 +58,7 @@ typedef struct
      * 行为：
      *   - 无条件覆盖现有紧急记录；
      *   - module/arg 清零；
-     *   - 最后写 flag = 0xA5。
+     *   - 最后写 flag = 0xA5，再写 check。
     */
     result_t (*pf_emergency)(uint32_t code, uint32_t extra);
     /*
@@ -70,7 +71,7 @@ typedef struct
      * 行为：
      *   - 如果已经有一条“非卡住”的紧急记录，返回 RES_BUSY，不覆盖；
      *   - 否则写 module=task_id、arg=min(elapsed,65535)、extra=完整毫秒、
-     *     code=PLAT_ERR_SCHED_STUCK、flag=0xA5。
+     *     code=PLAT_ERR_SCHED_STUCK、flag=0xA5，再写 check。
     */
     result_t (*pf_stuck)(uint8_t task_id, uint32_t elapsed_ms);
     result_t (*pf_stuck_clear)(void);    /*任务后来返回了，撤掉“卡住”这条记录。*/

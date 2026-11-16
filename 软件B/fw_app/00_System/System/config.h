@@ -53,7 +53,7 @@
 #define PORT_TIMEBASE_SPIN            8000000u  /* 等毫秒计数变化的上限 正常1ms就变了，这个已经几百ms了*/
 
 #define LOG_DAILY_DEPTH               8u        /*日常日志在 RAM 里最多攒多少条*/
-#define LOG_EMERGENCY_FLAG            0xA5u     /*复位后是否需要写FLASH的标志位，目前在bss段会被清，后续需要加到额外划分ram区间里*/
+#define LOG_EMERGENCY_FLAG            0xA5u     /*共享区里还有一条没进 FLASH 的紧急记录。冷上电要连 check 一起看*/
 
 #define APP_SLOT                      1u        /* 1：本工程链接在 B 面。软件 里是 0 */
 #include "mem_map.h"

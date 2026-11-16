@@ -16,7 +16,8 @@ MEMORY
 {
 	FLASH (rx) : ORIGIN = MEM_LD_APP_ORIGIN, LENGTH = MEM_LD_APP_LENGTH
 	NZW   (rx) : ORIGIN = MEM_FLASH_PHY_BASE + MEM_NZW_OFS, LENGTH = MEM_NZW_SIZE
-	RAM   (xrw) : ORIGIN = MEM_RAM_BASE, LENGTH = MEM_RAM_SIZE
+	RAM   (xrw) : ORIGIN = MEM_RAM_BASE, LENGTH = MEM_RAM_SIZE - MEM_SHARE_SIZE
+	SHARE (rw)  : ORIGIN = MEM_SHARE_ADDR, LENGTH = MEM_SHARE_SIZE
 }
 
 
@@ -155,6 +156,15 @@ SECTIONS
         . = . + __stack_size;
         PROVIDE( _eusrstack = .);
     } >RAM
+
+	/* 软复位不清。启动代码只清 _sbss 到 _ebss，扫不到这里。 */
+	.share MEM_SHARE_ADDR (NOLOAD) :
+	{
+		KEEP(*(.share .share.*))
+	} >SHARE
+
+	ASSERT(ORIGIN(RAM) + LENGTH(RAM) == ORIGIN(SHARE), "RAM end is not the share area")
+	ASSERT(SIZEOF(.share) <= LENGTH(SHARE), "region SHARE overflowed")
 
 	/* 放在最后。空段不占字节，不会把 bin 从零等待区拉到 0x08010000。 */
 	.nzwtext :
