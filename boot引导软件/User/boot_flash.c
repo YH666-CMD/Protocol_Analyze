@@ -203,10 +203,10 @@ static uint8_t half_write(uint32_t addr, const ota_flag_t *rec)
     return 1u;
 }
 
-/* 复制 old，改成 run 这一面，追加到下一条。失败返回 0，不跳转的决定交给调用方。 */
-static uint8_t flag_save_run(const ota_flag_t *old, uint8_t run)
+/* mode：0 把 run_slot 改成 slot 并清试运行；1 把 trial_cnt 记成 1；2 把 slot 标 BAD 并清试运行。 */
+static uint8_t flag_save(const ota_flag_t *old, uint8_t mode, uint8_t slot)
 {
-    const ota_flag_t *slot;
+    const ota_flag_t *base;
     const ota_flag_t *latest;
     ota_flag_t rec;
     uint32_t irq;
@@ -217,13 +217,13 @@ static uint8_t flag_save_run(const ota_flag_t *old, uint8_t run)
     uint32_t k;
     uint8_t ok;
 
-    slot = (const ota_flag_t *)BOOT_FLAG_ADDR;
+    base = (const ota_flag_t *)BOOT_FLAG_ADDR;
     latest = flag_latest();
     latest_i = BOOT_FLAG_NUM;
     index = 0u;
     if (latest != 0)
     {
-        latest_i = (uint32_t)(latest - slot);
+        latest_i = (uint32_t)(latest - base);
         index = latest_i + 1u;
         if (index >= BOOT_FLAG_NUM)
         {
@@ -235,9 +235,22 @@ static uint8_t flag_save_run(const ota_flag_t *old, uint8_t run)
     {
         ((uint32_t *)&rec)[k] = ((const uint32_t *)old)[k];
     }
-    rec.run_slot = run;
-    rec.trial_slot = OTA_SLOT_NONE;
-    rec.trial_cnt = 0u;
+    if (mode == 0u)
+    {
+        rec.run_slot = slot;
+        rec.trial_slot = OTA_SLOT_NONE;
+        rec.trial_cnt = 0u;
+    }
+    else if (mode == 1u)
+    {
+        rec.trial_cnt = 1u;
+    }
+    else
+    {
+        rec.slot[slot].state = OTA_ST_BAD;
+        rec.trial_slot = OTA_SLOT_NONE;
+        rec.trial_cnt = 0u;
+    }
     rec.magic = OTA_FLAG_MAGIC;
     rec.seq = (latest == 0) ? 1u : (latest->seq + 1u);
     rec.crc = boot_crc32((const uint8_t *)&rec, (uint32_t)offsetof(ota_flag_t, crc));
@@ -288,6 +301,9 @@ uint32_t boot_choose(uint32_t *seq)
     const ota_flag_t *rec;
     uint8_t slot;
     uint8_t other;
+    uint8_t trial;
+    uint8_t banned;
+    uint8_t state;
 
     rec = flag_latest();
     if (rec == 0)
@@ -300,17 +316,43 @@ uint32_t boot_choose(uint32_t *seq)
     {
         return 0u;
     }
+
+    banned = OTA_SLOT_NONE;
+    trial = rec->trial_slot;
+    if ((trial == OTA_SLOT_A) || (trial == OTA_SLOT_B))
+    {
+        state = rec->slot[trial].state;
+        if ((rec->trial_cnt < OTA_TRIAL_MAX) &&
+            ((state == OTA_ST_READY) || (state == OTA_ST_GOOD)) &&
+            (face_ok(trial, &rec->slot[trial], 0u) != 0u))
+        {
+            if (flag_save(rec, 1u, 0u) != 0u)
+            {
+                *seq = *seq + 1u;
+                return slot_addr(trial);
+            }
+        }
+        else
+        {
+            if (flag_save(rec, 2u, trial) != 0u)
+            {
+                *seq = *seq + 1u;
+            }
+            banned = trial;
+        }
+    }
+
     slot = rec->run_slot;
-    if (face_ok(slot, &rec->slot[slot], 0u) != 0u)
+    if ((slot != banned) && (face_ok(slot, &rec->slot[slot], 0u) != 0u))
     {
         return slot_addr(slot);
     }
     other = (uint8_t)(slot ^ 1u);
-    if (face_ok(other, &rec->slot[other], 1u) != 0u)
+    if ((other != banned) && (face_ok(other, &rec->slot[other], 1u) != 0u))
     {
-        if (flag_save_run(rec, other) != 0u)
+        if (flag_save(rec, 0u, other) != 0u)
         {
-            *seq = rec->seq + 1u;
+            *seq = *seq + 1u;
         }
         return slot_addr(other);
     }

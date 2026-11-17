@@ -25,7 +25,7 @@ typedef struct
 #define OTA_SLOT_A      0u
 #define OTA_SLOT_B      1u
 #define OTA_SLOT_NONE   0xFFu   /* trial_slot：没有待试运行的面 */
-#define OTA_TRIAL_MAX   3u
+#define OTA_TRIAL_MAX   1u      /* 试运行只跳 1 次，再复位还没确认就回滚 */
 
 /* 槽状态。不用擦除字节 0x39、0xE3。 */
 #define OTA_ST_EMPTY    0u
