@@ -26,6 +26,24 @@
 软件B/obj/objects.mk
 软件B/obj/sources.mk
 
+# ========== Boot 编译中间产物 ==========
+boot引导软件/obj/**/*.o
+boot引导软件/obj/**/*.d
+boot引导软件/obj/**/*.su
+boot引导软件/obj/**/*.mk
+boot引导软件/obj/*.elf
+boot引导软件/obj/*.hex
+boot引导软件/obj/*.bin
+boot引导软件/obj/*.map
+boot引导软件/obj/*.lst
+boot引导软件/obj/makefile
+boot引导软件/obj/objects.mk
+boot引导软件/obj/sources.mk
+
+# ========== 忽略不需要跟踪的文件夹 ==========
+官方代码/
+升级规划/
+
 # ========== 通用临时文件 ==========
 *.log
 *.tmp

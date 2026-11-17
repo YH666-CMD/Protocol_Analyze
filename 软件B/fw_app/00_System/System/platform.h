@@ -38,7 +38,8 @@ typedef enum
     PLAT_ERR_EVT_FULL        = 6,  /* 目标任务邮箱里还有没处理的事件 */
     PLAT_ERR_LOG_FLASH       = 10, /* 日志写入 FLASH 失败。7 到 9 空着，不要复用 */
     PLAT_ERR_TASK            = 11, /* 任务函数返回了错误 */
-    PLAT_ERR_SCHED_STUCK     = 12  /* 任务超过自己的周期还没返回。节拍中断写进紧急日志，不走 plat_raise */
+    PLAT_ERR_SCHED_STUCK     = 12, /* 任务超过自己的周期还没返回。节拍中断写进紧急日志，不走 plat_raise */
+    PLAT_ERR_HARDFAULT       = 13  /* 硬件错误。HardFault 里写入紧急日志后复位 */
 } plat_err_t;/*异常/故障码*/
 
 
