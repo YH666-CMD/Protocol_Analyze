@@ -148,3 +148,12 @@ const plat_hook_t plat_hook_wdt_hang        = { "wdt_hang",        on_wdt_hang, 
 const plat_hook_t plat_hook_evt_full        = { "evt_full",        on_evt_full,        0u };
 const plat_hook_t plat_hook_log_flash       = { "log_flash",       on_log_flash,       0u };
 const plat_hook_t plat_hook_task_fail       = { "task_fail",       on_task_fail,       0u };
+
+/*试图擦写 Boot 或当前这一面*/
+static int32_t on_flash(uint32_t arg0, uint32_t arg1)
+{
+    (void)arg0;
+    (void)arg1;
+    return PLAT_ERR_FLASH;
+}
+const plat_hook_t plat_hook_flash           = { "flash",           on_flash,           0u };
