@@ -45,6 +45,7 @@
 #define FRAME_CMD_ADC       0x30u
 #define FRAME_CMD_SPI       0x40u
 #define FRAME_CMD_I2C       0x50u
+#define FRAME_CMD_FLAG      0x60u   /* 临时：设备回一条标志记录。阶段 11 删 */
 
 /*
  * 主机发给设备。高位置 1。
@@ -98,6 +99,10 @@
 #define FRAME_OP_RST        0x02u
 #define FRAME_OP_START      0x03u
 #define FRAME_OP_STOP       0x04u
+/* 临时：FRAME_MOD_SYS 下读写清标志区。阶段 11 删。 */
+#define FRAME_OP_FLAG_RD    0x10u
+#define FRAME_OP_FLAG_WR    0x11u
+#define FRAME_OP_FLAG_CLR   0x12u
 
 typedef struct
 {

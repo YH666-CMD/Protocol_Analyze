@@ -17,6 +17,10 @@
 #include "print.h"
 #endif
 #include <stddef.h>
+#if (OTA_FLAG_DBG != 0u)
+#include "ota_boot.h"
+#include "bsp_flash.h"
+#endif
 
 #if (FRAME_MAX > USB_EP_MPS)
 #error "FRAME_MAX must not exceed USB_EP_MPS"
@@ -255,14 +259,88 @@ static result_t usb_on_uart_line(uint8_t cmd, const uint8_t *data, uint16_t len)
     return drv_uart.pf_line_set(&line);
 }
 
-/*
- * 还没有具体动作。占位行的处理函数是空，不会被调用。
- * 以后在表里加 { 模块, 动作, 处理函数 } 即可。
- */
+#if (OTA_FLAG_DBG != 0u)
+
+#define USB_FLAG_SKIP   (offsetof(ota_flag_t, run_slot))
+#define USB_FLAG_COPY   (offsetof(ota_flag_t, crc) - offsetof(ota_flag_t, run_slot))
+
+typedef char usb_flag_fit_check[((4u + USB_FLAG_COPY) <= FRAME_DATA_MAX) ? 1 : -1];
+
+static void usb_move(uint8_t *dst, const uint8_t *src, uint32_t n)
+{
+    uint32_t i;
+
+    for (i = 0u; i < n; i++)
+    {
+        dst[i] = src[i];
+    }
+}
+
+/* 先回一帧 FLAG：seq 小端，后面 52 字节从 run_slot 开始，不含记录自己的 CRC。 */
+static result_t usb_flag_rd(const uint8_t *arg, uint16_t arg_len)
+{
+    ota_flag_t rec;
+    uint8_t body[4u + USB_FLAG_COPY];
+    result_t rc;
+
+    (void)arg;
+    if (arg_len != 0u)
+    {
+        return RES_PARAM;
+    }
+    rc = ota_boot.pf_load(&rec);
+    if (rc != RES_OK)
+    {
+        return rc;
+    }
+    body[0] = (uint8_t)rec.seq;
+    body[1] = (uint8_t)(rec.seq >> 8);
+    body[2] = (uint8_t)(rec.seq >> 16);
+    body[3] = (uint8_t)(rec.seq >> 24);
+    usb_move(&body[4], ((const uint8_t *)&rec) + USB_FLAG_SKIP, USB_FLAG_COPY);
+    return app_usb_comm_report(FRAME_CMD_FLAG, body, (uint16_t)sizeof(body));
+}
+
+static result_t usb_flag_wr(const uint8_t *arg, uint16_t arg_len)
+{
+    ota_flag_t rec;
+
+    if ((arg == 0) || (arg_len != USB_FLAG_COPY))
+    {
+        return RES_PARAM;
+    }
+    rec.magic = 0u;
+    rec.seq = 0u;
+    rec.crc = 0u;
+    usb_move(((uint8_t *)&rec) + USB_FLAG_SKIP, arg, USB_FLAG_COPY);
+    return ota_boot.pf_save(&rec);
+}
+
+static result_t usb_flag_clr(const uint8_t *arg, uint16_t arg_len)
+{
+    (void)arg;
+    if (arg_len != 0u)
+    {
+        return RES_PARAM;
+    }
+    return bsp_flash.pf_erase(MEM_FLASH_PHY_BASE + MEM_FLAG_OFS, MEM_FLAG_SIZE);
+}
+
+#endif
+
+#if (OTA_FLAG_DBG != 0u)
+static const usb_ctrl_row_t s_ctrl[] =
+{
+    { FRAME_MOD_SYS, FRAME_OP_FLAG_RD,  usb_flag_rd  },
+    { FRAME_MOD_SYS, FRAME_OP_FLAG_WR,  usb_flag_wr  },
+    { FRAME_MOD_SYS, FRAME_OP_FLAG_CLR, usb_flag_clr },
+};
+#else
 static const usb_ctrl_row_t s_ctrl[] =
 {
     { 0u, 0u, NULL },
 };
+#endif
 
 static result_t usb_on_ctrl(uint8_t cmd, const uint8_t *data, uint16_t len)
 {
