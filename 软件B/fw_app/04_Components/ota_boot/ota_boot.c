@@ -1,6 +1,7 @@
 #include "ota_boot.h"
 #include "config.h"
 #include "crc.h"
+#include "bsp_flash.h"
 #include <stddef.h>
 
 #if (APP_SLOT == 0)
@@ -9,12 +10,14 @@
 #define IMG_LINK_OFS    MEM_SLOT_B_OFS
 #endif
 
-#define OTA_FLAG_ADDR   (MEM_FLASH_PHY_BASE + MEM_FLAG_OFS)
-#define OTA_FLAG_NUM    (MEM_FLAG_SIZE / sizeof(ota_flag_t))
+#define OTA_FLAG_ADDR       (MEM_FLASH_PHY_BASE + MEM_FLAG_OFS)
+#define OTA_FLAG_NUM        (MEM_FLAG_SIZE / sizeof(ota_flag_t))
+#define OTA_FLAG_PER_PAGE   (MEM_FLASH_PAGE / sizeof(ota_flag_t))
 
 extern char _img_end[];
 
 typedef char ota_flag_count_check[((MEM_FLAG_SIZE % sizeof(ota_flag_t)) == 0u) ? 1 : -1];
+typedef char ota_flag_page_check[((MEM_FLASH_PAGE % sizeof(ota_flag_t)) == 0u) ? 1 : -1];
 
 /* 没有别的代码引用它。链接脚本 KEEP 这一段，避免被丢掉。 */
 const img_hdr_t g_img_hdr __attribute__((section(".img_hdr"), used)) =
@@ -25,20 +28,19 @@ const img_hdr_t g_img_hdr __attribute__((section(".img_hdr"), used)) =
     (uint32_t)_img_end
 };
 
-/* 32 条里，魔术字对且前 60 字节 CRC 对的，取 seq 最大。 */
-static result_t ota_flag_load(ota_flag_t *out)
+static uint32_t ota_flag_crc(const ota_flag_t *rec)
+{
+    return crc_sw_driver.pf_crc32((const uint8_t *)rec, (uint32_t)offsetof(ota_flag_t, crc));
+}
+
+/* 没有有效记录时返回 OTA_FLAG_NUM。 */
+static uint32_t ota_flag_latest(void)
 {
     const ota_flag_t *rec;
-    const ota_flag_t *best;
     uint32_t i;
-    uint32_t crc;
+    uint32_t best;
 
-    if (out == 0)
-    {
-        return RES_PARAM;
-    }
-
-    best = 0;
+    best = OTA_FLAG_NUM;
     rec = (const ota_flag_t *)OTA_FLAG_ADDR;
     for (i = 0u; i < OTA_FLAG_NUM; i++)
     {
@@ -46,27 +48,115 @@ static result_t ota_flag_load(ota_flag_t *out)
         {
             continue;
         }
-        crc = crc_sw_driver.pf_crc32((const uint8_t *)&rec[i], (uint32_t)offsetof(ota_flag_t, crc));
-        if (crc != rec[i].crc)
+        if (ota_flag_crc(&rec[i]) != rec[i].crc)
         {
             continue;
         }
-        if ((best == 0) || (rec[i].seq > best->seq))
+        if ((best == OTA_FLAG_NUM) || (rec[i].seq > rec[best].seq))
         {
-            best = &rec[i];
+            best = i;
+        }
+    }
+    return best;
+}
+
+static result_t ota_flag_load(ota_flag_t *out)
+{
+    uint32_t latest;
+
+    if (out == 0)
+    {
+        return RES_PARAM;
+    }
+    latest = ota_flag_latest();
+    if (latest >= OTA_FLAG_NUM)
+    {
+        return RES_STATE;
+    }
+    *out = ((const ota_flag_t *)OTA_FLAG_ADDR)[latest];
+    return RES_OK;
+}
+
+/* crc 在结构体最后。半字写从低地址往高地址写，所以它最后落地。 */
+static result_t ota_flag_save(const ota_flag_t *in)
+{
+    const ota_flag_t *slot;
+    ota_flag_t rec;
+    uint32_t latest;
+    uint32_t index;
+    uint32_t n;
+    uint32_t addr;
+    result_t rc;
+
+    if (in == 0)
+    {
+        return RES_PARAM;
+    }
+
+    slot = (const ota_flag_t *)OTA_FLAG_ADDR;
+    latest = ota_flag_latest();
+    index = 0u;
+    if (latest < OTA_FLAG_NUM)
+    {
+        index = latest + 1u;
+        if (index >= OTA_FLAG_NUM)
+        {
+            index = 0u;
         }
     }
 
-    if (best == 0)
+    for (n = 0u; n < OTA_FLAG_NUM; n++)
+    {
+        if (index == latest)
+        {
+            return RES_STATE;
+        }
+        addr = OTA_FLAG_ADDR + (index * sizeof(ota_flag_t));
+        if ((index % OTA_FLAG_PER_PAGE) == 0u)
+        {
+            /* 这一页里还有当前记录，不能擦。 */
+            if ((latest < OTA_FLAG_NUM) &&
+                ((latest / OTA_FLAG_PER_PAGE) == (index / OTA_FLAG_PER_PAGE)))
+            {
+                return RES_STATE;
+            }
+            rc = bsp_flash.pf_erase(addr, MEM_FLASH_PAGE);
+            if (rc != RES_OK)
+            {
+                return rc;
+            }
+        }
+        if (bsp_flash.pf_is_blank(addr, sizeof(ota_flag_t)) != 0u)
+        {
+            break;
+        }
+        index++;
+        if (index >= OTA_FLAG_NUM)
+        {
+            index = 0u;
+        }
+    }
+    if (n >= OTA_FLAG_NUM)
     {
         return RES_STATE;
     }
 
-    *out = *best;
-    return RES_OK;
+    rec = *in;
+    rec.magic = OTA_FLAG_MAGIC;
+    if (latest < OTA_FLAG_NUM)
+    {
+        rec.seq = slot[latest].seq + 1u;
+    }
+    else
+    {
+        rec.seq = 1u;
+    }
+    rec.crc = ota_flag_crc(&rec);
+    return bsp_flash.pf_write(addr, (const uint8_t *)&rec, sizeof(rec));
 }
 
 const ota_boot_driver_t ota_boot =
 {
-    .pf_load = ota_flag_load
+    .pf_load = ota_flag_load,
+    .pf_save = ota_flag_save
 };
