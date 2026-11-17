@@ -123,9 +123,10 @@ static result_t flash_guard(uint32_t *addr, uint32_t len, uint32_t align)
     return flash_allow(*addr, len);
 }
 
+/* 偶地址 39，奇地址 E3。按字读是 0xE339E339。 */
 static uint8_t flash_erased_byte(uint32_t addr)
 {
-    return ((addr & 2u) == 0u) ? 0x39u : 0xE3u;
+    return ((addr & 1u) == 0u) ? 0x39u : 0xE3u;
 }
 
 static uint8_t flash_is_blank(uint32_t addr, uint32_t len)

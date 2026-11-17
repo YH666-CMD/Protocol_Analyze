@@ -255,13 +255,11 @@ function Write-IntelHex([hashtable]$Map, [string]$Path) {
 }
 
 function Get-ErasedByte([uint32]$Address) {
-    # 小端读出的字是 0xE339E339，内存字节是 39 39 E3 E3
-    switch ([int]($Address -band 3)) {
-        0 { return [byte]0x39 }
-        1 { return [byte]0x39 }
-        2 { return [byte]0xE3 }
-        default { return [byte]0xE3 }
+    # 偶地址 39，奇地址 E3。小端读出的字是 0xE339E339
+    if (($Address -band 1) -eq 0) {
+        return [byte]0x39
     }
+    return [byte]0xE3
 }
 
 function Get-SlotPlain($Map, [uint32]$Start, [int]$Length) {
