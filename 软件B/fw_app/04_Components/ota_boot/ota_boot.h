@@ -22,4 +22,7 @@ typedef struct
 
 extern const ota_boot_driver_t ota_boot;
 
+/* A 面且标志区没有有效记录时，按本镜像写第一条。其它情况直接返回。 */
+void ota_flag_factory(void);
+
 #endif /* FW_APP_04_COMPONENTS_OTA_BOOT_OTA_BOOT_H_ */

@@ -155,6 +155,42 @@ static result_t ota_flag_save(const ota_flag_t *in)
     return bsp_flash.pf_write(addr, (const uint8_t *)&rec, sizeof(rec));
 }
 
+void ota_flag_factory(void)
+{
+#if (APP_SLOT == 0)
+    ota_flag_t rec;
+    uint32_t addr;
+    uint32_t size;
+    uint32_t i;
+
+    if (ota_flag_latest() < OTA_FLAG_NUM)
+    {
+        return;
+    }
+    addr = MEM_FLASH_RUN_BASE + IMG_LINK_OFS;
+    if ((uint32_t)_img_end <= addr)
+    {
+        return;
+    }
+    size = (uint32_t)_img_end - addr;
+    if (size > MEM_SLOT_SIZE)
+    {
+        return;
+    }
+    for (i = 0u; i < (sizeof(rec) / 4u); i++)
+    {
+        ((uint32_t *)&rec)[i] = 0u;
+    }
+    rec.run_slot = OTA_SLOT_A;
+    rec.trial_slot = OTA_SLOT_NONE;
+    rec.slot[OTA_SLOT_A].state = OTA_ST_GOOD;
+    rec.slot[OTA_SLOT_A].size = size;
+    rec.slot[OTA_SLOT_A].crc32 = crc_sw_driver.pf_crc32((const uint8_t *)addr, size);
+    rec.slot[OTA_SLOT_A].version = FW_VERSION;
+    (void)ota_flag_save(&rec);
+#endif
+}
+
 const ota_boot_driver_t ota_boot =
 {
     .pf_load = ota_flag_load,

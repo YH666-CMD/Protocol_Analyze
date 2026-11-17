@@ -9,6 +9,7 @@
 #include "sched_tasks.h"
 #include "evt.h"
 #include "log.h"
+#include "ota_boot.h"
 #include <stddef.h>
 
 /* 上电自检记下的时钟源。不在这里改时钟。 */
@@ -47,6 +48,9 @@ void app_init(void)
     count = 0u;
 
     bsp_board_init();
+#if (APP_SLOT == 0)
+    ota_flag_factory();
+#endif
     /* 时钟起来之后第一件事：紧急 RAM 里如果有标志，就尝试写入 FLASH。 */
     (void)log_sw_driver.pf_boot();
     (void)evt_sw_driver.pf_init(SCHED_ID_COUNT, bsp_board_irq_lock, bsp_board_irq_unlock);
