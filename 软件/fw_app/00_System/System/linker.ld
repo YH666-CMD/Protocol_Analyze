@@ -39,6 +39,14 @@ SECTIONS
 	  . = ALIGN(64);
   } >FLASH AT>FLASH
 
+	.img_hdr :
+	{
+		KEEP(*(.img_hdr))
+	} >FLASH AT>FLASH
+
+	ASSERT(ADDR(.img_hdr) == ORIGIN(FLASH) + MEM_IMG_HDR_OFS, "image header is not at +0x100")
+	ASSERT(SIZEOF(.img_hdr) == 16, "image header is not 16 bytes")
+
 	.text :
 	{
 		. = ALIGN(4);
@@ -131,6 +139,9 @@ SECTIONS
     	. = ALIGN(4);
 		PROVIDE( _edata = .);
 	} >RAM AT>FLASH
+
+	PROVIDE(_img_end = LOADADDR(.data) + SIZEOF(.data));
+	ASSERT(_img_end <= ORIGIN(FLASH) + LENGTH(FLASH), "image end is outside the slot")
 
 	.bss :
 	{

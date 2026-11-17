@@ -55,6 +55,7 @@
 #define LOG_DAILY_DEPTH               8u        /*日常日志在 RAM 里最多攒多少条*/
 #define LOG_EMERGENCY_FLAG            0xA5u     /* 紧急记录有效。变量在 .share，软复位还在；冷上电校验不过就当空 */
 
+#define FW_VERSION                    1u        /* 镜像头里的版本。改功能时加一 */
 #define APP_SLOT                      1u        /* 1：本工程链接在 B 面。软件 里是 0 */
 #include "mem_map.h"
 

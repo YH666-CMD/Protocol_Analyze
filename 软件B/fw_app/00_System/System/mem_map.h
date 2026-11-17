@@ -55,6 +55,7 @@
 #define MEM_STACK_SIZE         MEM_U(2048)
 
 #define MEM_IMG_HDR_OFS        MEM_U(0x100)        /* 镜像头在本面镜像内的偏移 */
+#define MEM_IMG_MAGIC          MEM_U(0x31474D49)   /* 镜像头魔术字。小端字节 49 4D 47 31 */
 
 #define MEM_LD_APP_LENGTH      MEM_SLOT_SIZE
 
