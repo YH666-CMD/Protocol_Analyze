@@ -1,25 +1,26 @@
 /********************************** (C) COPYRIGHT *******************************
  * 文件: main.c
  * 说明: Boot。
- *       看 A 面。地址、擦除值和镜像头在软件工程的 mem_map.h。
- *       起始字是擦除值，或镜像头不是这一面，就停住。
- *       否则在软件中断里跳过去。现在仍固定跳 A 面。
- *       标志区只读序号。改记录后要复位，Boot 才会再读。
+ *       地址、擦除值和镜像头在软件工程的 mem_map.h。
+ *       没有记录就跳 A 面，不算整面 CRC。
+ *       有记录就校验 run_slot。不过，且另一面是 GOOD 并且校验通过，就跳另一面。
+ *       两面都不行就停住。回退时先不改记录。
+ *       起始字是擦除值，或镜像头不是这一面，也停住。
+ *       改记录后要复位，Boot 才会再选。
  *
  *       g_boot_trace
  *         1  已进入 main，准备看目标面
  *         2  起始字是擦除值，停在这里
  *         3  头核对通过，准备跳到 g_boot_dest
  *         4  魔术字不对，或 link_ofs 不是这一面，停在这里
- *       g_boot_dest  准备跳的地址。停在 2 或 4 的时候也是这个地址。
+ *         5  记录里的两面都不可用，停在这里
+ *       g_boot_dest  准备跳的地址。停在 2、4、5 的时候也看它。5 的时候是 0。
  *       g_boot_seq   标志区里有效记录的最大序号。没有记录是 0。
  *******************************************************************************/
 #include "ch32v20x.h"
 #include "mem_map.h"
 #include "ota_def.h"
 #include "boot_flash.h"
-
-#define BOOT_A_ADDR       (MEM_FLASH_RUN_BASE + MEM_SLOT_A_OFS)
 
 volatile uint32_t g_boot_trace;
 volatile uint32_t g_boot_dest;
@@ -76,6 +77,18 @@ static void boot_jump(uint32_t addr)
 
 int main(void)
 {
-    g_boot_seq = boot_flag_seq();
-    boot_jump(BOOT_A_ADDR);
+    uint32_t seq;
+    uint32_t addr;
+
+    addr = boot_choose(&seq);
+    g_boot_seq = seq;
+    if (addr == 0u)
+    {
+        g_boot_trace = 5u;
+        g_boot_dest = 0u;
+        while (1)
+        {
+        }
+    }
+    boot_jump(addr);
 }

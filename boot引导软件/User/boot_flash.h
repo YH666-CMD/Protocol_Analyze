@@ -3,13 +3,14 @@
  *
  *  Created on: 2026
  *      Author: YinHao
- *      introduction: 读标志区里序号最大的一条。没有有效记录时返回 0。
+ *      introduction: 按标志区选出这次要跳的地址。没有记录就选 A 面。
  */
 #ifndef USER_BOOT_FLASH_H_
 #define USER_BOOT_FLASH_H_
 
 #include <stdint.h>
 
-uint32_t boot_flag_seq(void);
+/* 返回要跳的地址。两面都不可用时返回 0。*seq 是当前记录序号，没有记录为 0。 */
+uint32_t boot_choose(uint32_t *seq);
 
 #endif /* USER_BOOT_FLASH_H_ */
