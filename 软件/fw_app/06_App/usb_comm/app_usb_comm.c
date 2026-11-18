@@ -18,9 +18,7 @@
 #endif
 #include <stddef.h>
 #include "ota_boot.h"
-#if (OTA_FLAG_DBG != 0u)
 #include "bsp_flash.h"
-#endif
 
 #if (FRAME_MAX > USB_EP_MPS)
 #error "FRAME_MAX must not exceed USB_EP_MPS"
@@ -366,6 +364,17 @@ static result_t usb_on_ctrl(uint8_t cmd, const uint8_t *data, uint16_t len)
     return RES_STATE;
 }
 
+static uint8_t s_ota_on;
+static uint32_t s_expect;
+static uint32_t s_page;
+static uint16_t s_fill;
+static uint32_t s_buf[MEM_FLASH_PAGE / 4u];
+
+static uint32_t ota_face_base(uint8_t slot)
+{
+    return MEM_FLASH_PHY_BASE + ((slot == 0u) ? MEM_SLOT_A_OFS : MEM_SLOT_B_OFS);
+}
+
 static result_t usb_on_ota_info(uint8_t cmd, const uint8_t *data, uint16_t len)
 {
     ota_flag_t rec;
@@ -397,6 +406,13 @@ static result_t usb_on_ota_info(uint8_t cmd, const uint8_t *data, uint16_t len)
         body[6] = rec.slot[OTA_SLOT_B].state;
         body[7] = rec.trial_slot;
         body[8] = rec.trial_cnt;
+    }
+    if (s_ota_on != 0u)
+    {
+        body[9] = (uint8_t)s_expect;
+        body[10] = (uint8_t)(s_expect >> 8);
+        body[11] = (uint8_t)(s_expect >> 16);
+        body[12] = (uint8_t)(s_expect >> 24);
     }
     return app_usb_comm_report(FRAME_CMD_OTA_INFO_RSP, body, (uint16_t)sizeof(body));
 }
@@ -439,7 +455,132 @@ static result_t usb_on_ota_start(uint8_t cmd, const uint8_t *data, uint16_t len)
     rec.slot[target].state = OTA_ST_WRITING;
     rec.slot[target].size = usb_u32(field);
     rec.slot[target].crc32 = usb_u32(field + 4u);
-    return ota_boot.pf_save(&rec);
+    if (ota_boot.pf_save(&rec) != RES_OK)
+    {
+        return RES_STATE;
+    }
+    s_ota_on = 1u;
+    s_expect = ota_face_base(target);
+    s_page = s_expect;
+    s_fill = 0u;
+    return RES_OK;
+}
+
+static uint8_t ota_cover(uint32_t addr, uint16_t n, uint32_t base)
+{
+    if ((n == 0u) || (addr < base) || (n > MEM_SLOT_SIZE))
+    {
+        return 0u;
+    }
+    return (uint8_t)((addr - base) <= (MEM_SLOT_SIZE - n));
+}
+
+/* 失败时不改 s_fill / s_page，调用方按原期望地址重发。 */
+static result_t ota_take(const uint8_t *p, uint16_t n)
+{
+    uint8_t *raw;
+    uint16_t fill;
+    uint16_t room;
+    uint16_t k;
+    uint16_t i;
+    uint32_t page;
+    result_t rc;
+
+    raw = (uint8_t *)s_buf;
+    fill = s_fill;
+    page = s_page;
+    while (n != 0u)
+    {
+        room = (uint16_t)(MEM_FLASH_PAGE - fill);
+        k = (n < room) ? n : room;
+        for (i = 0u; i < k; i++)
+        {
+            raw[fill + i] = p[i];
+        }
+        fill = (uint16_t)(fill + k);
+        p += k;
+        n = (uint16_t)(n - k);
+        if (fill != MEM_FLASH_PAGE)
+        {
+            continue;
+        }
+        rc = bsp_flash.pf_erase(page, MEM_FLASH_PAGE);
+        if (rc != RES_OK)
+        {
+            return rc;
+        }
+        rc = bsp_flash.pf_write_page(page, s_buf);
+        if (rc != RES_OK)
+        {
+            return rc;
+        }
+        page += MEM_FLASH_PAGE;
+        fill = 0u;
+    }
+    s_fill = fill;
+    s_page = page;
+    return RES_OK;
+}
+
+static result_t ota_nack(uint8_t cmd, result_t rc)
+{
+    uint8_t body[6];
+
+    body[0] = cmd;
+    body[1] = (uint8_t)rc;
+    body[2] = (uint8_t)s_expect;
+    body[3] = (uint8_t)(s_expect >> 8);
+    body[4] = (uint8_t)(s_expect >> 16);
+    body[5] = (uint8_t)(s_expect >> 24);
+    (void)app_usb_comm_report(FRAME_CMD_NACK, body, 6u);
+    return RES_OK;
+}
+
+/* 正在跑的那一面直接应答。另一面必须按期望地址顺序来，满 256 字节写一页。 */
+static result_t usb_on_ota_data(uint8_t cmd, const uint8_t *data, uint16_t len)
+{
+    uint32_t addr;
+    uint32_t base;
+    uint16_t n;
+    result_t rc;
+
+    if (s_ota_on == 0u)
+    {
+        return RES_STATE;
+    }
+    if ((data == 0) || (len <= 4u) || ((len - 4u) > FRAME_OTA_DATA_MAX))
+    {
+        return RES_PARAM;
+    }
+    addr = usb_u32(data);
+    n = (uint16_t)(len - 4u);
+    if (ota_cover(addr, n, ota_face_base((uint8_t)APP_SLOT)) != 0u)
+    {
+        usb_reply(FRAME_CMD_ACK, cmd, RES_OK);
+        return RES_OK;
+    }
+    base = ota_face_base((uint8_t)(APP_SLOT ^ 1u));
+    if (ota_cover(addr, n, base) == 0u)
+    {
+        return ota_nack(cmd, RES_PARAM);
+    }
+    if ((addr + n) <= s_expect)
+    {
+        usb_reply(FRAME_CMD_ACK, cmd, RES_OK);
+        return RES_OK;
+    }
+    if (addr != s_expect)
+    {
+        return ota_nack(cmd, RES_PARAM);
+    }
+    rc = ota_take(&data[4], n);
+    if (rc != RES_OK)
+    {
+        return ota_nack(cmd, rc);
+    }
+    s_expect += n;
+    usb_reply(FRAME_CMD_ACK, cmd, RES_OK);
+    return RES_OK;
 }
 
 static const usb_cmd_row_t s_cmd[] =
@@ -450,6 +591,7 @@ static const usb_cmd_row_t s_cmd[] =
     { FRAME_CMD_UART_LINE, 1u, usb_on_uart_line },
     { FRAME_CMD_OTA_INFO,  0u, usb_on_ota_info  },
     { FRAME_CMD_OTA_START, 1u, usb_on_ota_start },
+    { FRAME_CMD_OTA_DATA,  0u, usb_on_ota_data  },
 };
 
 static void usb_dispatch(uint8_t cmd, const uint8_t *data, uint16_t len)
