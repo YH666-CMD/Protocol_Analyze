@@ -250,6 +250,11 @@ const drv_usb_driver_t drv_usb =
     .pf_on_rx_set = usb_on_rx_set,
 };
 
+void drv_usb_detach(void)
+{
+    USB_Port_Set(DISABLE, DISABLE);
+}
+
 #if USB_LOG_ENABLE
 
 static usb_log_fn s_log;

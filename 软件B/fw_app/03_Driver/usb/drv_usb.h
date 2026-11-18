@@ -87,4 +87,7 @@ typedef struct
 
 extern const drv_usb_driver_t drv_usb;
 
+/* 关掉 D+ 上拉。主机把它看成拔出。 */
+void drv_usb_detach(void);
+
 #endif /* FW_APP_03_DRIVER_USB_DRV_USB_H_ */

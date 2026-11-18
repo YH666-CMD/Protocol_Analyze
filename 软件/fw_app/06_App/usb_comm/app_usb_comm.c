@@ -19,6 +19,9 @@
 #include <stddef.h>
 #include "ota_boot.h"
 #include "bsp_flash.h"
+#include "bsp_time.h"
+#include "crc.h"
+#include "ch32v20x.h"
 
 #if (FRAME_MAX > USB_EP_MPS)
 #error "FRAME_MAX must not exceed USB_EP_MPS"
@@ -583,6 +586,75 @@ static result_t usb_on_ota_data(uint8_t cmd, const uint8_t *data, uint16_t len)
     return RES_OK;
 }
 
+/* 应答发出去之后再断上拉、复位。复位进 Boot，由 Boot 跳到待试运行的那一面。 */
+static void ota_reboot(void)
+{
+    uint32_t t0;
+
+    t0 = bsp_time.pf_now_ms();
+    while ((drv_usb.pf_tx_ready() == 0u) &&
+           ((uint32_t)(bsp_time.pf_now_ms() - t0) < 50u))
+    {
+    }
+    drv_usb_detach();
+    t0 = bsp_time.pf_now_ms();
+    while ((uint32_t)(bsp_time.pf_now_ms() - t0) < 50u)
+    {
+    }
+    NVIC_SystemReset();
+}
+
+static result_t usb_on_ota_end(uint8_t cmd, const uint8_t *data, uint16_t len)
+{
+    ota_flag_t rec;
+    volatile img_hdr_t *hdr;
+    uint32_t base;
+    uint8_t target;
+
+    (void)data;
+    if (len != 0u)
+    {
+        return RES_PARAM;
+    }
+    if (ota_boot.pf_load(&rec) != RES_OK)
+    {
+        return RES_STATE;
+    }
+    target = (uint8_t)(APP_SLOT ^ 1u);
+    base = ota_face_base(target);
+    if ((rec.slot[target].state != OTA_ST_WRITING) ||
+        (rec.slot[target].size != MEM_SLOT_SIZE))
+    {
+        return RES_STATE;
+    }
+    if ((s_ota_on != 0u) &&
+        ((s_fill != 0u) || (s_expect != (base + MEM_SLOT_SIZE))))
+    {
+        return RES_STATE;
+    }
+    if (crc_sw_driver.pf_crc32((const uint8_t *)base, MEM_SLOT_SIZE) != rec.slot[target].crc32)
+    {
+        return RES_STATE;
+    }
+    hdr = (volatile img_hdr_t *)(base + MEM_IMG_HDR_OFS);
+    if ((hdr->magic != MEM_IMG_MAGIC) || (hdr->link_ofs != (base - MEM_FLASH_PHY_BASE)))
+    {
+        return RES_STATE;
+    }
+    rec.run_slot = (uint8_t)APP_SLOT;
+    rec.trial_slot = target;
+    rec.trial_cnt = 0u;
+    rec.slot[target].state = OTA_ST_READY;
+    if (ota_boot.pf_save(&rec) != RES_OK)
+    {
+        return RES_STATE;
+    }
+    s_ota_on = 0u;
+    usb_reply(FRAME_CMD_ACK, cmd, RES_OK);
+    ota_reboot();
+    return RES_OK;
+}
+
 static const usb_cmd_row_t s_cmd[] =
 {
     { FRAME_CMD_PING,      1u, usb_on_ping      },
@@ -592,6 +664,7 @@ static const usb_cmd_row_t s_cmd[] =
     { FRAME_CMD_OTA_INFO,  0u, usb_on_ota_info  },
     { FRAME_CMD_OTA_START, 1u, usb_on_ota_start },
     { FRAME_CMD_OTA_DATA,  0u, usb_on_ota_data  },
+    { FRAME_CMD_OTA_END,   0u, usb_on_ota_end   },
 };
 
 static void usb_dispatch(uint8_t cmd, const uint8_t *data, uint16_t len)
