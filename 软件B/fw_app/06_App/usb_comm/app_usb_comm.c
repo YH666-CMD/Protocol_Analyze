@@ -21,6 +21,7 @@
 #include "bsp_flash.h"
 #include "bsp_time.h"
 #include "crc.h"
+#include "aes.h"
 #include "ch32v20x.h"
 
 #if (FRAME_MAX > USB_EP_MPS)
@@ -373,6 +374,46 @@ static uint32_t s_page;
 static uint16_t s_fill;
 static uint32_t s_buf[MEM_FLASH_PAGE / 4u];
 
+/* 与工具\加密工具\密钥.txt 相同。AES-128-CBC，每一面都从这一个向量重新开始。 */
+static const uint8_t s_ota_key[16] =
+{
+    0x2Bu, 0x7Eu, 0x15u, 0x16u, 0x28u, 0xAEu, 0xD2u, 0xA6u,
+    0xABu, 0xF7u, 0x15u, 0x88u, 0x09u, 0xCFu, 0x4Fu, 0x3Cu
+};
+static const uint8_t s_ota_iv0[16] =
+{
+    0x00u, 0x01u, 0x02u, 0x03u, 0x04u, 0x05u, 0x06u, 0x07u,
+    0x08u, 0x09u, 0x0Au, 0x0Bu, 0x0Cu, 0x0Du, 0x0Eu, 0x0Fu
+};
+static uint8_t s_iv[16];
+
+static void ota_copy(uint8_t *dst, const uint8_t *src, uint16_t n)
+{
+    uint16_t i;
+
+    for (i = 0u; i < n; i++)
+    {
+        dst[i] = src[i];
+    }
+}
+
+static void ota_iv_reset(void)
+{
+    ota_copy(s_iv, s_ota_iv0, 16u);
+}
+
+/* 解开到 dst。调用方在这页写成功之后才把 iv 存回去，失败可以重发同一包。 */
+static void ota_crypt(uint8_t *dst, const uint8_t *src, uint16_t n, uint8_t *iv)
+{
+    uint16_t off;
+
+    for (off = 0u; off < n; off = (uint16_t)(off + 16u))
+    {
+        ota_copy(&dst[off], &src[off], 16u);
+        aes_sw_driver.pf_aes128_decrypt(iv, &dst[off], s_ota_key);
+    }
+}
+
 static uint32_t ota_face_base(uint8_t slot)
 {
     return MEM_FLASH_PHY_BASE + ((slot == 0u) ? MEM_SLOT_A_OFS : MEM_SLOT_B_OFS);
@@ -466,6 +507,7 @@ static result_t usb_on_ota_start(uint8_t cmd, const uint8_t *data, uint16_t len)
     s_expect = ota_face_base(target);
     s_page = s_expect;
     s_fill = 0u;
+    ota_iv_reset();
     return RES_OK;
 }
 
@@ -542,6 +584,8 @@ static result_t ota_nack(uint8_t cmd, result_t rc)
 /* 正在跑的那一面直接应答。另一面必须按期望地址顺序来，满 256 字节写一页。 */
 static result_t usb_on_ota_data(uint8_t cmd, const uint8_t *data, uint16_t len)
 {
+    uint8_t plain[FRAME_OTA_DATA_MAX];
+    uint8_t iv[16];
     uint32_t addr;
     uint32_t base;
     uint16_t n;
@@ -576,11 +620,18 @@ static result_t usb_on_ota_data(uint8_t cmd, const uint8_t *data, uint16_t len)
     {
         return ota_nack(cmd, RES_PARAM);
     }
-    rc = ota_take(&data[4], n);
+    if ((n & 15u) != 0u)
+    {
+        return ota_nack(cmd, RES_PARAM);
+    }
+    ota_copy(iv, s_iv, 16u);
+    ota_crypt(plain, &data[4], n, iv);
+    rc = ota_take(plain, n);
     if (rc != RES_OK)
     {
         return ota_nack(cmd, rc);
     }
+    ota_copy(s_iv, iv, 16u);
     s_expect += n;
     usb_reply(FRAME_CMD_ACK, cmd, RES_OK);
     return RES_OK;
