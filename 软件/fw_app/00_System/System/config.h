@@ -19,8 +19,9 @@
 #define SCHED_ID_HEARTBEAT            1u        /* 心跳任务 */
 #define SCHED_ID_UART                 2u        /* 串口驱动初始化。不读接收环 */
 #define SCHED_ID_USB                  3u        /* USB 协议任务。读串口环，组帧上传，拆下行帧 */
+#define SCHED_ID_OTA                  4u        /* 试运行确认。本面待试运行且其它任务都跑过后，改成以后走本面 */
 
-#define SCHED_ID_COUNT                4u        /* 任务总数 */
+#define SCHED_ID_COUNT                5u        /* 任务总数 */
 
 #define SCHED_PERIOD_LOG_MS           100u      /* 日志任务周期 */
 #define SCHED_PHASE_LOG_MS            0u        /* 日志任务相位 */
@@ -30,6 +31,8 @@
 #define SCHED_PHASE_UART_MS           2u        /* 躲开日志相位 0 */
 #define SCHED_PERIOD_USB_MS           10u       /* USB 任务周期。一拍可发多帧，115200 下 10ms 环里大约 115 字节 */
 #define SCHED_PHASE_USB_MS            7u        /* 躲开日志相位 0 和串口相位 2 */
+#define SCHED_PERIOD_OTA_MS           1000u     /* 试运行确认周期。相位靠后，等其它任务先跑 */
+#define SCHED_PHASE_OTA_MS            900u
 
 
 #define UART_BAUDRATE                 115200u   /*波特率*/
@@ -63,7 +66,7 @@
 #if (SCHED_ID_COUNT > SCHED_TASK_MAX)
 #error "SCHED_ID_COUNT exceeds SCHED_TASK_MAX"
 #endif
-#if (SCHED_PHASE_HEARTBEAT_MS >= SCHED_PERIOD_HEARTBEAT_MS) || (SCHED_PHASE_LOG_MS >= SCHED_PERIOD_LOG_MS) || (SCHED_PHASE_UART_MS >= SCHED_PERIOD_UART_MS) || (SCHED_PHASE_USB_MS >= SCHED_PERIOD_USB_MS)
+#if (SCHED_PHASE_HEARTBEAT_MS >= SCHED_PERIOD_HEARTBEAT_MS) || (SCHED_PHASE_LOG_MS >= SCHED_PERIOD_LOG_MS) || (SCHED_PHASE_UART_MS >= SCHED_PERIOD_UART_MS) || (SCHED_PHASE_USB_MS >= SCHED_PERIOD_USB_MS) || (SCHED_PHASE_OTA_MS >= SCHED_PERIOD_OTA_MS)
 #error "phase must be smaller than period"
 #endif
 #if (UART_BAUDRATE == 0u) || (UART_RX_TAKE_MAX == 0u)

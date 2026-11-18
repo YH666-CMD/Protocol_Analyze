@@ -191,6 +191,56 @@ void ota_flag_factory(void)
 #endif
 }
 
+/* 升级后的待试运行面，确认自己能跑之后，把以后的复位改到本面。 */
+void ota_trial_poll(uint8_t tasks_ran)
+{
+    ota_flag_t rec;
+    volatile img_hdr_t *hdr;
+    uint32_t addr;
+    static uint8_t s_stop;
+
+    if (s_stop != 0u)
+    {
+        return;
+    }
+
+    if (ota_flag_load(&rec) != RES_OK)
+    {
+        return;
+    }
+    /* 1. 本面是这次升级后正在待试运行的面。 */
+    if ((rec.trial_slot != (uint8_t)APP_SLOT) ||
+        (rec.slot[APP_SLOT].state != OTA_ST_READY))
+    {
+        return;
+    }
+    /* 2. 开头、镜像头、整面 CRC 仍和记录一致。不对就不改，下次复位由 Boot 回滚。 */
+    addr = MEM_FLASH_RUN_BASE + IMG_LINK_OFS;
+    if ((rec.slot[APP_SLOT].size != MEM_SLOT_SIZE) ||
+        (*(volatile uint32_t *)addr == MEM_FLASH_ERASED_WORD))
+    {
+        s_stop = 1u;
+        return;
+    }
+    hdr = (volatile img_hdr_t *)(addr + MEM_IMG_HDR_OFS);
+    if ((hdr->magic != MEM_IMG_MAGIC) || (hdr->link_ofs != IMG_LINK_OFS) ||
+        (crc_sw_driver.pf_crc32((const uint8_t *)addr, MEM_SLOT_SIZE) != rec.slot[APP_SLOT].crc32))
+    {
+        s_stop = 1u;
+        return;
+    }
+    /* 3. 其它任务都跑过，才写成以后一直走本面。 */
+    if (tasks_ran == 0u)
+    {
+        return;
+    }
+    rec.run_slot = (uint8_t)APP_SLOT;
+    rec.slot[APP_SLOT].state = OTA_ST_GOOD;
+    rec.trial_slot = OTA_SLOT_NONE;
+    rec.trial_cnt = 0u;
+    (void)ota_flag_save(&rec);
+}
+
 const ota_boot_driver_t ota_boot =
 {
     .pf_load = ota_flag_load,

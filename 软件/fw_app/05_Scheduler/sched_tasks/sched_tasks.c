@@ -4,9 +4,10 @@
 #include "app_heartbeat.h"
 #include "app_uart_monitor.h"
 #include "app_usb_comm.h"
+#include "ota_boot.h"
 #include <stddef.h>
 
-#if (SCHED_ID_LOG != 0u) || (SCHED_ID_HEARTBEAT != 1u) || (SCHED_ID_UART != 2u) || (SCHED_ID_USB != 3u)
+#if (SCHED_ID_LOG != 0u) || (SCHED_ID_HEARTBEAT != 1u) || (SCHED_ID_UART != 2u) || (SCHED_ID_USB != 3u) || (SCHED_ID_OTA != 4u)
 #error "task id macros must match the table order below"
 #endif
 
@@ -45,6 +46,33 @@ static result_t log_task_on_tick(uint32_t now_ms, uint32_t elapsed_ms, uint32_t 
     }
     return log_task_finish(log_sw_driver.pf_flush_daily());
 }
+
+static sched_task_rt_t s_rt[SCHED_TASK_MAX];
+
+/* 日志、心跳、串口、USB 这一轮都返回过。本任务相位靠后，进这里时它们应已跑过。 */
+static uint8_t ota_tasks_once(void)
+{
+    uint8_t i;
+
+    for (i = 0u; i < SCHED_ID_OTA; i++)
+    {
+        if (s_rt[i].round_done == 0u)
+        {
+            return 0u;
+        }
+    }
+    return 1u;
+}
+
+static result_t ota_task_on_tick(uint32_t now_ms, uint32_t elapsed_ms, uint32_t event)
+{
+    (void)now_ms;
+    (void)elapsed_ms;
+    (void)event;
+    ota_trial_poll(ota_tasks_once());
+    return RES_OK;
+}
+
 /*
  * sched_tasks.c 任务表
  *   name      任务名，调试用，调度器不做逻辑判断；
@@ -83,9 +111,16 @@ static const sched_task_t s_tasks[] =
         .pf_init    = app_usb_comm_init,
         .pf_on_tick = app_usb_comm_on_tick,
     },
+    {
+        .name       = "ota",
+        .period_ms  = SCHED_PERIOD_OTA_MS,
+        .phase_ms   = SCHED_PHASE_OTA_MS,
+        .pf_init    = NULL,
+        .pf_on_tick = ota_task_on_tick,
+    },
 };
 
-static sched_task_rt_t s_rt[SCHED_TASK_MAX];/*任务运行时数组*/
+/*任务运行时数组。定义在任务表前面，试运行确认要看其它任务有没有跑过。 */
 
 typedef char sched_tasks_fit_check[(sizeof(s_tasks) / sizeof(s_tasks[0]) == SCHED_ID_COUNT) ? 1 : -1];/*表行数必须等于任务编号总数 SCHED_ID_COUNT*/
 typedef char sched_tasks_room_check[(sizeof(s_tasks) / sizeof(s_tasks[0]) <= SCHED_TASK_MAX) ? 1 : -1];/*表行数不能超过运行时数组容量 SCHED_TASK_MAX*/

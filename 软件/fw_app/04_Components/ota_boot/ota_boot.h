@@ -25,4 +25,11 @@ extern const ota_boot_driver_t ota_boot;
 /* A 面且标志区没有有效记录时，按本镜像写第一条。其它情况直接返回。 */
 void ota_flag_factory(void);
 
+/*
+ * 试运行确认。由调度任务调用，不由主机命令触发。
+ * tasks_ran 为 1 表示日志、心跳、串口、USB 这一轮都已经跑过。
+ * 顺序：本面是待试运行 → 镜像头和 CRC 与记录一致 → tasks_ran 为 1 → 把以后的复位改到本面。
+ */
+void ota_trial_poll(uint8_t tasks_ran);
+
 #endif /* FW_APP_04_COMPONENTS_OTA_BOOT_OTA_BOOT_H_ */
