@@ -1,0 +1,2 @@
+12:10:50.990  日志文件：D:\desktop\Protocol_Analyze\Protocol_Analyze\上位机\升级功能测试工具\日志\升级_20261118_121050.txt
+12:10:50.990  请选芯片的 USB 串口（1A86:FE0C）。HEX 用合并烧录文件，工具只发送里面的 A 面和 B 面。

@@ -401,6 +401,47 @@ static result_t usb_on_ota_info(uint8_t cmd, const uint8_t *data, uint16_t len)
     return app_usb_comm_report(FRAME_CMD_OTA_INFO_RSP, body, (uint16_t)sizeof(body));
 }
 
+static uint32_t usb_u32(const uint8_t *p)
+{
+    return (uint32_t)p[0]
+         | ((uint32_t)p[1] << 8)
+         | ((uint32_t)p[2] << 16)
+         | ((uint32_t)p[3] << 24);
+}
+
+/* 目标面是当前没在跑的那一面。只记大小和 CRC，并把该面标成正在写。 */
+static result_t usb_on_ota_start(uint8_t cmd, const uint8_t *data, uint16_t len)
+{
+    ota_flag_t rec;
+    const uint8_t *field;
+    uint8_t target;
+    uint8_t i;
+
+    (void)cmd;
+    if ((data == 0) || (len != 16u))
+    {
+        return RES_PARAM;
+    }
+    target = (uint8_t)(APP_SLOT ^ 1u);
+    field = &data[(uint16_t)target * 8u];
+    if (usb_u32(field) != MEM_SLOT_SIZE)
+    {
+        return RES_PARAM;
+    }
+    for (i = 0u; i < (uint8_t)(sizeof(rec) / 4u); i++)
+    {
+        ((uint32_t *)&rec)[i] = 0u;
+    }
+    (void)ota_boot.pf_load(&rec);
+    rec.run_slot = (uint8_t)APP_SLOT;
+    rec.trial_slot = OTA_SLOT_NONE;
+    rec.trial_cnt = 0u;
+    rec.slot[target].state = OTA_ST_WRITING;
+    rec.slot[target].size = usb_u32(field);
+    rec.slot[target].crc32 = usb_u32(field + 4u);
+    return ota_boot.pf_save(&rec);
+}
+
 static const usb_cmd_row_t s_cmd[] =
 {
     { FRAME_CMD_PING,      1u, usb_on_ping      },
@@ -408,6 +449,7 @@ static const usb_cmd_row_t s_cmd[] =
     { FRAME_CMD_UART_TX,   0u, usb_on_uart_tx   },
     { FRAME_CMD_UART_LINE, 1u, usb_on_uart_line },
     { FRAME_CMD_OTA_INFO,  0u, usb_on_ota_info  },
+    { FRAME_CMD_OTA_START, 1u, usb_on_ota_start },
 };
 
 static void usb_dispatch(uint8_t cmd, const uint8_t *data, uint16_t len)
