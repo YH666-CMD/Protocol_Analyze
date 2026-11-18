@@ -22,6 +22,7 @@
 #include "bsp_time.h"
 #include "crc.h"
 #include "aes.h"
+#include "log.h"
 #include "ch32v20x.h"
 
 #if (FRAME_MAX > USB_EP_MPS)
@@ -706,6 +707,25 @@ static result_t usb_on_ota_end(uint8_t cmd, const uint8_t *data, uint16_t len)
     return RES_OK;
 }
 
+/* 序号 0 读最新一条。设备只回 0x62，不再另回 ACK。 */
+static result_t usb_on_log(uint8_t cmd, const uint8_t *data, uint16_t len)
+{
+    uint8_t body[LOG_REC_BYTES];
+    result_t rc;
+
+    (void)cmd;
+    if ((data == 0) || (len != 4u))
+    {
+        return RES_PARAM;
+    }
+    rc = log_read(usb_u32(data), body);
+    if (rc != RES_OK)
+    {
+        return rc;
+    }
+    return app_usb_comm_report(FRAME_CMD_LOG_RSP, body, LOG_REC_BYTES);
+}
+
 static const usb_cmd_row_t s_cmd[] =
 {
     { FRAME_CMD_PING,      1u, usb_on_ping      },
@@ -716,6 +736,7 @@ static const usb_cmd_row_t s_cmd[] =
     { FRAME_CMD_OTA_START, 1u, usb_on_ota_start },
     { FRAME_CMD_OTA_DATA,  0u, usb_on_ota_data  },
     { FRAME_CMD_OTA_END,   0u, usb_on_ota_end   },
+    { FRAME_CMD_LOG,       0u, usb_on_log       },
 };
 
 static void usb_dispatch(uint8_t cmd, const uint8_t *data, uint16_t len)

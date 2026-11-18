@@ -47,6 +47,7 @@
 #define FRAME_CMD_I2C       0x50u
 #define FRAME_CMD_FLAG      0x60u   /* 临时：设备回一条标志记录。阶段 11 删 */
 #define FRAME_CMD_OTA_INFO_RSP 0x61u /* 升级查询的回复。不能用 0x60，0x60 是标志读 */
+#define FRAME_CMD_LOG_RSP   0x62u /* 一条 32 字节日志 */
 
 /*
  * 主机发给设备。高位置 1。
@@ -92,6 +93,7 @@
 #define FRAME_CMD_OTA_END     0xE3u /* 无数据 */
 #define FRAME_CMD_OTA_CONFIRM 0xE4u /* 无数据 */
 #define FRAME_CMD_OTA_ABORT   0xE5u /* 无数据 */
+#define FRAME_CMD_LOG         0xE6u /* 序号 4 字节。0 表示最新一条。设备回 0x62 */
 #define FRAME_OTA_DATA_MAX    48u
 
 /* CTRL 数据区第 1 字节：对哪个模块动手。 */
