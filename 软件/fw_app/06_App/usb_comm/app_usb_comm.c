@@ -17,8 +17,8 @@
 #include "print.h"
 #endif
 #include <stddef.h>
-#if (OTA_FLAG_DBG != 0u)
 #include "ota_boot.h"
+#if (OTA_FLAG_DBG != 0u)
 #include "bsp_flash.h"
 #endif
 
@@ -366,12 +366,48 @@ static result_t usb_on_ctrl(uint8_t cmd, const uint8_t *data, uint16_t len)
     return RES_STATE;
 }
 
+static result_t usb_on_ota_info(uint8_t cmd, const uint8_t *data, uint16_t len)
+{
+    ota_flag_t rec;
+    uint8_t body[13];
+    uint32_t ver;
+    uint8_t i;
+
+    (void)cmd;
+    (void)data;
+    if (len != 0u)
+    {
+        return RES_PARAM;
+    }
+    for (i = 0u; i < (uint8_t)sizeof(body); i++)
+    {
+        body[i] = 0u;
+    }
+    /* 当前面是正在执行的这一面。记录里的 run_slot 要复位后才生效。 */
+    body[0] = (uint8_t)APP_SLOT;
+    ver = FW_VERSION;
+    body[1] = (uint8_t)ver;
+    body[2] = (uint8_t)(ver >> 8);
+    body[3] = (uint8_t)(ver >> 16);
+    body[4] = (uint8_t)(ver >> 24);
+    body[7] = OTA_SLOT_NONE;
+    if (ota_boot.pf_load(&rec) == RES_OK)
+    {
+        body[5] = rec.slot[OTA_SLOT_A].state;
+        body[6] = rec.slot[OTA_SLOT_B].state;
+        body[7] = rec.trial_slot;
+        body[8] = rec.trial_cnt;
+    }
+    return app_usb_comm_report(FRAME_CMD_OTA_INFO_RSP, body, (uint16_t)sizeof(body));
+}
+
 static const usb_cmd_row_t s_cmd[] =
 {
     { FRAME_CMD_PING,      1u, usb_on_ping      },
     { FRAME_CMD_CTRL,      1u, usb_on_ctrl      },
     { FRAME_CMD_UART_TX,   0u, usb_on_uart_tx   },
     { FRAME_CMD_UART_LINE, 1u, usb_on_uart_line },
+    { FRAME_CMD_OTA_INFO,  0u, usb_on_ota_info  },
 };
 
 static void usb_dispatch(uint8_t cmd, const uint8_t *data, uint16_t len)

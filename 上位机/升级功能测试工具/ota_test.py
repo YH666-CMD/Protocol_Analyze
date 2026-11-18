@@ -82,6 +82,46 @@ def slot_name(value):
     return "0x%02X" % value
 
 
+def explain(frame):
+    kind = frame[2]
+    body = frame[3:-2]
+    names = {
+        0x01: "确认",
+        0x02: "拒绝",
+        0x60: "标志记录",
+        0x61: "升级查询回复",
+        0x80: "心跳",
+        0x81: "控制",
+        0xE0: "查询",
+        0xE1: "开始",
+        0xE2: "数据",
+        0xE3: "结束",
+        0xE4: "确认试运行",
+        0xE5: "放弃升级",
+    }
+    if kind == CMD_INFO_RSP and len(body) == 13:
+        run, version, st_a, st_b, trial, count, addr = struct.unpack("<BIBBBBI", body)
+        return ("当前正在跑 %s 面，版本 %u。A 面%s，B 面%s。试运行面 %s，已试 %u 次。下一写入地址 %08X。"
+                % (slot_name(run), version,
+                   STATE_NAME.get(st_a, str(st_a)), STATE_NAME.get(st_b, str(st_b)),
+                   slot_name(trial), count, addr))
+    if kind in (CMD_ACK, CMD_NACK) and len(body) >= 2:
+        ask = names.get(body[0], "指令 %02X" % body[0])
+        result = RES_NAME.get(body[1], "结果 %u" % body[1])
+        word = "同意" if kind == CMD_ACK else "拒绝"
+        extra = ""
+        if kind == CMD_NACK and len(body) >= 6:
+            extra = "，设备要的地址是 %08X" % struct.unpack_from("<I", body, 2)[0]
+        return "%s「%s」：%s%s" % (word, ask, result, extra)
+    if kind == 0x60 and len(body) >= 25:
+        seq = struct.unpack_from("<I", body, 0)[0]
+        return ("标志记录序号 %u。记录里要跑 %s，试运行 %s，次数 %u。A 面%s，B 面%s。"
+                % (seq, slot_name(body[4]), slot_name(body[5]), body[6],
+                   STATE_NAME.get(body[8], str(body[8])),
+                   STATE_NAME.get(body[24], str(body[24]))))
+    return names.get(kind, "未识别指令 %02X" % kind)
+
+
 class Port(object):
     def __init__(self, log):
         self.log = log
@@ -157,6 +197,7 @@ class Port(object):
             except queue.Empty:
                 continue
             self.log("收 %s" % hex_line(frame))
+            self.log("含义 " + explain(frame))
             kind = frame[2]
             body = frame[3:-2]
             if kind in (CMD_ACK, CMD_NACK) and body and body[0] == cmd:
@@ -332,12 +373,9 @@ class App(object):
             self.log("查询被拒绝：%s" % RES_NAME.get(code, str(code)))
             return
         if kind != CMD_INFO_RSP or len(body) != 13:
-            self.log("查询回复长度不是 13 字节，实际 %u" % len(body))
+            self.log("查询回复不是 13 字节的升级状态")
             return
-        run, version, st_a, st_b, trial, count, addr = struct.unpack("<BIBBBBI", body)
-        self.log("当前面 %s，版本 %u，A=%s，B=%s，试运行 %s，次数 %u，下一地址 %08X" % (
-            slot_name(run), version, STATE_NAME.get(st_a, st_a), STATE_NAME.get(st_b, st_b),
-            slot_name(trial), count, addr))
+        self.log("查询完成。上面一行含义就是设备现在的状态，查询不会改记录，也不用复位。")
 
     def load_hex(self):
         path = self.path.get().strip()
