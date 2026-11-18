@@ -1,15 +1,15 @@
 烧录用这一份：合并烧录.hex
-共 37112 字节
+共 38428 字节
 
-0x08000000 .. 0x08000253  596 字节
-0x08000800 .. 0x08004F4F  18256 字节
+0x08000000 .. 0x0800070B  1804 字节
+0x08000800 .. 0x08004FBB  18364 字节
 0x08008000 .. 0x0800C753  18260 字节
 
 D:\desktop\Protocol_Analyze\Protocol_Analyze\boot引导软件\obj\CH32V203C8T6.hex
-0x08000000 .. 0x08000253  596 字节
+0x08000000 .. 0x0800070B  1804 字节
 
 D:\desktop\Protocol_Analyze\Protocol_Analyze\软件\obj\CH32V203C8T6.hex
-0x08000800 .. 0x08004F4F  18256 字节
+0x08000800 .. 0x08004FBB  18364 字节
 
 D:\desktop\Protocol_Analyze\Protocol_Analyze\软件B\obj\CH32V203C8T6.hex
 0x08008000 .. 0x0800C753  18260 字节

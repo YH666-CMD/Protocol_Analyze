@@ -46,6 +46,7 @@
 #define FRAME_CMD_SPI       0x40u
 #define FRAME_CMD_I2C       0x50u
 #define FRAME_CMD_FLAG      0x60u   /* 临时：设备回一条标志记录。阶段 11 删 */
+#define FRAME_CMD_OTA_INFO_RSP 0x61u /* 升级查询的回复。不能用 0x60，0x60 是标志读 */
 
 /*
  * 主机发给设备。高位置 1。
@@ -84,6 +85,14 @@
 #define FRAME_CMD_ADC_CFG   0xB0u
 #define FRAME_CMD_SPI_CFG   0xC0u
 #define FRAME_CMD_I2C_CFG   0xD0u
+/* 升级。数据区固定，后面单片机只按这几个长度解析。 */
+#define FRAME_CMD_OTA_INFO    0xE0u /* 无数据。设备回 0x61 */
+#define FRAME_CMD_OTA_START   0xE1u /* 目标面 1 + 大小 4 + CRC32 4 + 版本 4 */
+#define FRAME_CMD_OTA_DATA    0xE2u /* 偏移 4 + 最多 48 字节 */
+#define FRAME_CMD_OTA_END     0xE3u /* 无数据 */
+#define FRAME_CMD_OTA_CONFIRM 0xE4u /* 无数据 */
+#define FRAME_CMD_OTA_ABORT   0xE5u /* 无数据 */
+#define FRAME_OTA_DATA_MAX    48u
 
 /* CTRL 数据区第 1 字节：对哪个模块动手。 */
 #define FRAME_MOD_SYS       0x00u
