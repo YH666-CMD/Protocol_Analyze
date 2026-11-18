@@ -87,8 +87,8 @@
 #define FRAME_CMD_I2C_CFG   0xD0u
 /* 升级。数据区固定，后面单片机只按这几个长度解析。 */
 #define FRAME_CMD_OTA_INFO    0xE0u /* 无数据。设备回 0x61 */
-#define FRAME_CMD_OTA_START   0xE1u /* 目标面 1 + 大小 4 + CRC32 4 + 版本 4 */
-#define FRAME_CMD_OTA_DATA    0xE2u /* 偏移 4 + 最多 48 字节 */
+#define FRAME_CMD_OTA_START   0xE1u /* A 大小4 + A 的 CRC4 + B 大小4 + B 的 CRC4。目标面由设备决定 */
+#define FRAME_CMD_OTA_DATA    0xE2u /* 物理地址 4 + 最多 48 字节 */
 #define FRAME_CMD_OTA_END     0xE3u /* 无数据 */
 #define FRAME_CMD_OTA_CONFIRM 0xE4u /* 无数据 */
 #define FRAME_CMD_OTA_ABORT   0xE5u /* 无数据 */

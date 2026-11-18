@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""临时明文升级发送。走芯片的 USB 虚拟串口，帧和固件 frame.h 一致。"""
+"""临时升级发送。读带地址的 HEX，按地址把 A、B 整份发出去。"""
 
 import datetime
 import os
@@ -28,10 +28,12 @@ CMD_END = 0xE3
 CMD_CONFIRM = 0xE4
 CMD_ABORT = 0xE5
 DATA_MAX = 48
-SLOT_SIZE = 30 * 1024
+SLOT_LEN = 30 * 1024
+SLOT_A = 0x08000800
+SLOT_B = 0x08008000
 HDR_OFS = 0x100
 IMG_MAGIC = 0x31474D49
-LINK_OFS = (0x800, 0x8000)
+LINK_OFS = {SLOT_A: 0x800, SLOT_B: 0x8000}
 VID_CDC = (0x1A86, 0xFE0C)
 VID_CH340 = (0x1A86, 0x7523)
 
@@ -190,13 +192,10 @@ class App(object):
 
         mid = ttk.Frame(root, padding=(8, 0, 8, 8))
         mid.pack(fill=tk.X)
-        ttk.Label(mid, text="明文 bin").pack(side=tk.LEFT)
+        ttk.Label(mid, text="HEX").pack(side=tk.LEFT)
         self.path = tk.StringVar()
-        ttk.Entry(mid, textvariable=self.path, width=46).pack(side=tk.LEFT, padx=4)
+        ttk.Entry(mid, textvariable=self.path, width=56).pack(side=tk.LEFT, padx=4)
         ttk.Button(mid, text="选择", command=self.browse).pack(side=tk.LEFT)
-        self.target = tk.StringVar(value="自动")
-        ttk.Combobox(mid, textvariable=self.target, width=8, state="readonly",
-                     values=("自动", "A", "B")).pack(side=tk.LEFT, padx=6)
 
         buttons = ttk.Frame(root, padding=(8, 0, 8, 8))
         buttons.pack(fill=tk.X)
@@ -208,7 +207,7 @@ class App(object):
         self.text = scrolledtext.ScrolledText(root, height=24, font=("Consolas", 10))
         self.text.pack(fill=tk.BOTH, expand=True, padx=8, pady=(0, 8))
         self.log("日志文件：%s" % self.log_path)
-        self.log("请选芯片的 USB 串口（1A86:FE0C）。CH340 连的是普通串口，当前固件不在那边解析升级帧。")
+        self.log("请选芯片的 USB 串口（1A86:FE0C）。HEX 用合并烧录文件，工具只发送里面的 A 面和 B 面。")
         self.refresh()
         self.root.after(100, self._drain)
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
@@ -280,7 +279,7 @@ class App(object):
         self.log("已连接 %s" % item.device)
 
     def browse(self):
-        path = filedialog.askopenfilename(filetypes=[("bin", "*.bin"), ("全部", "*.*")])
+        path = filedialog.askopenfilename(filetypes=[("hex", "*.hex"), ("全部", "*.*")])
         if path:
             self.path.set(path)
 
@@ -313,7 +312,7 @@ class App(object):
         if kind == CMD_NACK:
             extra = ""
             if len(body) >= 6:
-                extra = "，期望偏移 %u" % struct.unpack_from("<I", body, 2)[0]
+                extra = "，期望地址 %08X" % struct.unpack_from("<I", body, 2)[0]
             self.log("%s被拒绝：%s%s" % (step, RES_NAME.get(code, str(code)), extra))
             return None
         if code != 0:
@@ -335,94 +334,132 @@ class App(object):
         if kind != CMD_INFO_RSP or len(body) != 13:
             self.log("查询回复长度不是 13 字节，实际 %u" % len(body))
             return
-        run, version, st_a, st_b, trial, count, ofs = struct.unpack("<BIBBBBI", body)
-        self.log("当前面 %s，版本 %u，A=%s，B=%s，试运行 %s，次数 %u，已写偏移 %u" % (
+        run, version, st_a, st_b, trial, count, addr = struct.unpack("<BIBBBBI", body)
+        self.log("当前面 %s，版本 %u，A=%s，B=%s，试运行 %s，次数 %u，下一地址 %08X" % (
             slot_name(run), version, STATE_NAME.get(st_a, st_a), STATE_NAME.get(st_b, st_b),
-            slot_name(trial), count, ofs))
+            slot_name(trial), count, addr))
 
-    def load_bin(self):
+    def load_hex(self):
         path = self.path.get().strip()
         if not path:
-            self.log("还没有选择 bin")
+            self.log("还没有选择 HEX")
             return None
-        data = open(path, "rb").read()
-        self.log("文件 %s，%u 字节" % (path, len(data)))
-        if len(data) == 0 or len(data) > SLOT_SIZE:
-            self.log("长度必须是 1 到 %u" % SLOT_SIZE)
-            return None
-        if len(data) < HDR_OFS + 16:
-            self.log("文件比镜像头还短，偏移 0x100 没有头")
-            return None
-        magic, link, version, img_end = struct.unpack_from("<IIII", data, HDR_OFS)
-        self.log("镜像头 magic=%08X link=%X version=%u img_end=%X" % (magic, link, version, img_end))
-        if magic != IMG_MAGIC:
-            self.log("魔术字不是 IMG1，不发送")
-            return None
-        crc = zlib.crc32(data) & 0xFFFFFFFF
-        self.log("整文件 CRC32 %08X" % crc)
-        return data, version, link, crc
-
-    def choose_target(self, link):
-        pick = self.target.get()
-        if pick == "A":
-            target = 0
-        elif pick == "B":
-            target = 1
-        else:
-            self.log("自动选择：先查询当前面")
-            kind, body = self.port.transact(CMD_INFO, b"", 1.0)
-            if kind != CMD_INFO_RSP or len(body) != 13:
-                self.log("查不到当前面，自动选择失败。可以改成手动指定 A 或 B。")
+        mem = {}
+        upper = 0
+        for line_no, raw in enumerate(open(path, "r", encoding="ascii", errors="replace"), 1):
+            line = raw.strip()
+            if not line:
+                continue
+            if not line.startswith(":"):
+                self.log("第 %u 行不是 HEX 记录" % line_no)
                 return None
-            run = body[0]
-            if run not in (0, 1):
-                self.log("当前面是 %s，不能决定升级目标" % slot_name(run))
+            try:
+                rec = bytes.fromhex(line[1:])
+            except ValueError:
+                self.log("第 %u 行有非十六进制字符" % line_no)
                 return None
-            target = run ^ 1
-            self.log("当前在 %s，升级目标是 %s" % (slot_name(run), slot_name(target)))
-        if link != LINK_OFS[target]:
-            self.log("这份 bin 的 link_ofs 是 %X，目标面 %s 应该是 %X，不发送" % (
-                link, slot_name(target), LINK_OFS[target]))
-            return None
-        return target
+            if len(rec) < 5 or rec[0] != len(rec) - 5:
+                self.log("第 %u 行长度不对" % line_no)
+                return None
+            if ((sum(rec[:-1]) + rec[-1]) & 0xFF) != 0:
+                self.log("第 %u 行校验和不对" % line_no)
+                return None
+            count = rec[0]
+            offset = (rec[1] << 8) | rec[2]
+            kind = rec[3]
+            if kind == 0:
+                base = upper + offset
+                for i in range(count):
+                    addr = base + i
+                    if addr < 0x10000:
+                        addr += 0x08000000
+                    mem[addr] = rec[4 + i]
+            elif kind == 1:
+                break
+            elif kind == 2 and count == 2:
+                upper = ((rec[4] << 8) | rec[5]) << 4
+            elif kind == 4 and count == 2:
+                upper = ((rec[4] << 8) | rec[5]) << 16
+            elif kind == 5:
+                continue
+            else:
+                self.log("第 %u 行记录类型 %u 不认识" % (line_no, kind))
+                return None
+        faces = []
+        for base, name in ((SLOT_A, "A"), (SLOT_B, "B")):
+            buf = bytearray(SLOT_LEN)
+            present = 0
+            for i in range(SLOT_LEN):
+                addr = base + i
+                if addr in mem:
+                    buf[i] = mem[addr]
+                    present += 1
+                else:
+                    buf[i] = 0x39 if (addr & 1) == 0 else 0xE3
+            if present == 0:
+                self.log("%s 面在这份 HEX 里没有数据" % name)
+                return None
+            magic, link, version, img_end = struct.unpack_from("<IIII", buf, HDR_OFS)
+            self.log("%s 面原有 %u 字节，补空洞后 %u。头 magic=%08X link=%X version=%u img_end=%X" % (
+                name, present, SLOT_LEN, magic, link, version, img_end))
+            if magic != IMG_MAGIC or link != LINK_OFS[base]:
+                self.log("%s 面镜像头不是这一面，不发送" % name)
+                return None
+            crc = zlib.crc32(bytes(buf)) & 0xFFFFFFFF
+            self.log("%s 面明文 CRC32 %08X" % (name, crc))
+            faces.append((base, bytes(buf), crc))
+        boot = sum(1 for addr in mem if addr < SLOT_A)
+        self.log("Boot 区有 %u 字节，升级不发送" % boot)
+        return faces
 
     def do_upgrade(self):
         self.log("—— 升级 ——")
-        loaded = self.load_bin()
-        if loaded is None:
+        faces = self.load_hex()
+        if faces is None:
             return
-        data, version, link, crc = loaded
-        target = self.choose_target(link)
-        if target is None:
-            return
-        start = struct.pack("<BIII", target, len(data), crc, version)
+        self.log("整份按地址发送。设备正在跑的那一面直接回成功，只把另一面写入。")
+        start = struct.pack("<IIII", SLOT_LEN, faces[0][2], SLOT_LEN, faces[1][2])
         if self.need_ack(CMD_START, start, 3.0, "开始") is None:
             return
-        offset = 0
+        chunks = []
+        for base, blob, _crc in faces:
+            for off in range(0, SLOT_LEN, DATA_MAX):
+                chunks.append((base + off, blob[off:off + DATA_MAX]))
+        index = 0
         retries = 0
-        while offset < len(data):
-            chunk = data[offset:offset + DATA_MAX]
-            payload = struct.pack("<I", offset) + chunk
-            kind, body = self.port.transact(CMD_DATA, payload, 3.0)
+        sent = 0
+        while index < len(chunks):
+            addr, chunk = chunks[index]
+            kind, body = self.port.transact(CMD_DATA, struct.pack("<I", addr) + chunk, 3.0)
             if kind == CMD_ACK and len(body) >= 2 and body[1] == 0:
-                offset += len(chunk)
+                index += 1
+                sent += len(chunk)
                 retries = 0
-                if offset == len(chunk) or offset == len(data) or (offset % (DATA_MAX * 20)) == 0:
-                    self.log("已写入 %u / %u" % (offset, len(data)))
+                if index == 1 or sent == SLOT_LEN or sent == SLOT_LEN * 2 or (sent % (DATA_MAX * 20)) == 0:
+                    self.log("已发送到地址 %08X，累计 %u / %u" % (addr, sent, SLOT_LEN * 2))
                 continue
             expect = None
             if kind == CMD_NACK and len(body) >= 6:
                 expect = struct.unpack_from("<I", body, 2)[0]
-                self.log("数据被拒绝，设备期望偏移 %u，当前发送偏移 %u" % (expect, offset))
+                self.log("地址 %08X 被拒绝，设备要的地址是 %08X" % (addr, expect))
             else:
-                self.log("偏移 %u 没有成功" % offset)
+                self.log("地址 %08X 没有成功" % addr)
             retries += 1
             if retries > 5:
-                self.log("同一位置连续失败，升级停止。已确认写入到偏移 %u" % offset)
+                self.log("同一位置连续失败，升级停止。停在地址 %08X" % addr)
                 return
-            if expect is not None and expect <= len(data):
-                offset = expect
-            self.log("准备从偏移 %u 再发，第 %u 次" % (offset, retries))
+            if expect is not None:
+                found = None
+                for i, item in enumerate(chunks):
+                    if item[0] == expect:
+                        found = i
+                        break
+                if found is None:
+                    self.log("设备要的地址不在这份 A/B 数据里")
+                    return
+                index = found
+                sent = found * DATA_MAX
+            self.log("从地址 %08X 再发，第 %u 次" % (chunks[index][0], retries))
         if self.need_ack(CMD_END, b"", 8.0, "结束") is None:
             return
         self.log("结束已确认。设备这时应该重启。现在没有看门狗，USB 若还在，请手动按复位。")
