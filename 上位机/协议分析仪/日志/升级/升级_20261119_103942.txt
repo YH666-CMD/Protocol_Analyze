@@ -1,0 +1,5 @@
+10:39:42.090  选择加密.hex。不要点确认，新面自己留下。密钥：D:\desktop\Protocol_Analyze\Protocol_Analyze\工具\加密工具\密钥.txt
+10:40:18.944  选择加密.hex。不要点确认，新面自己留下。密钥：D:\desktop\Protocol_Analyze\Protocol_Analyze\工具\加密工具\密钥.txt
+10:40:32.030  发 A5 07 81 01 01 68 66
+10:40:32.086  收 A5 07 02 81 04 5F 4F
+10:40:32.086  拒绝 指令 81：状态不对

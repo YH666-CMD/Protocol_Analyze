@@ -31,6 +31,114 @@ LOG_ROOT = os.path.join(HERE, "日志")
 KEEP = 240
 LOG_READ_MAX = 32
 COLORS = ("#1f77b4", "#d62728", "#2ca02c")
+MODULES = (
+    ("串口", MOD_UART, True),
+    ("ADC", MOD_ADC, False),
+    ("SPI", MOD_SPI, False),
+    ("I2C", MOD_I2C, False),
+    ("PWM", MOD_PWM, False),
+)
+
+
+def show_in_taskbar(win):
+    """根窗口藏起来之后，每个新窗口仍要单独出现在任务栏。"""
+    if sys.platform != "win32":
+        return
+
+    def apply():
+        try:
+            import ctypes
+            hwnd = ctypes.windll.user32.GetParent(win.winfo_id())
+            if not hwnd:
+                hwnd = win.winfo_id()
+            style = ctypes.windll.user32.GetWindowLongW(hwnd, -20)
+            style = (style & ~0x00000080) | 0x00040000
+            ctypes.windll.user32.SetWindowLongW(hwnd, -20, style)
+            win.withdraw()
+            win.deiconify()
+        except Exception:
+            pass
+
+    win.after(50, apply)
+
+
+class Session(object):
+    """一条 USB 挂多个窗口。功能开或关记在这里，每个窗口都看得到收到的数据。"""
+
+    def __init__(self, root):
+        self.root = root
+        self.windows = []
+        self.next_index = 1
+        self.busy = False
+        self.closed = False
+        self.port_name = ""
+        self.want = {}
+        for name, _mod, default in MODULES:
+            self.want[name] = default
+        self.logs = {}
+        for name in ("串口", "ADC", "SPI", "I2C", "PWM", "升级", "日志"):
+            self.logs[name] = ChannelLog(os.path.join(LOG_ROOT, name), name)
+        self.link = Link(lambda text: self.broadcast("升级", text))
+        self.root.after(80, self.pump)
+
+    def broadcast(self, channel, text):
+        line = self.logs[channel].write(text)
+        for win in list(self.windows):
+            win.ui.put((channel, line))
+
+    def open_window(self):
+        top = tk.Toplevel(self.root)
+        Host(top, self)
+        show_in_taskbar(top)
+
+    def pump(self):
+        if self.closed:
+            return
+        alive = []
+        for win in self.windows:
+            try:
+                if win.root.winfo_exists():
+                    alive.append(win)
+            except tk.TclError:
+                continue
+        self.windows = alive
+        for win in alive:
+            win.flush()
+        for frame in self.link.drain_side():
+            self.on_frame(frame)
+        for win in alive:
+            win.draw_adc()
+            win.sync_face()
+        if self.link.ser is not None and not self.link.alive:
+            for win in alive:
+                win.status["text"] = "连接中断"
+        self.root.after(80, self.pump)
+
+    def on_frame(self, frame):
+        kind = frame[2]
+        body = frame[3:-2]
+        if kind == CMD_UART_RX:
+            self.broadcast("串口", "收 %s" % hex_line(body))
+        elif kind == CMD_ADC:
+            self.logs["ADC"].write("原始 " + hex_line(body))
+            for win in list(self.windows):
+                win.take_adc(body)
+        elif kind == CMD_SPI:
+            self.broadcast("SPI", "收 %s" % hex_line(body))
+        elif kind == CMD_I2C:
+            self.broadcast("I2C", "收 %s" % hex_line(body))
+        elif kind == CMD_PWM_IN:
+            if self.windows:
+                self.windows[0].take_pwm(body)
+        else:
+            self.broadcast("升级", "旁路帧 " + hex_line(frame))
+
+    def shutdown(self):
+        self.closed = True
+        self.link.close()
+        for item in self.logs.values():
+            item.close()
+        self.root.destroy()
 
 
 def key_path():
@@ -46,33 +154,44 @@ def key_path():
 
 
 class Host(object):
-    def __init__(self, root):
+    def __init__(self, root, session):
         self.root = root
-        self.root.title("协议分析仪")
+        self.session = session
+        self.link = session.link
+        self.logs = session.logs
+        index = session.next_index
+        session.next_index += 1
+        title = "协议分析仪" if index == 1 else "协议分析仪 - %d" % index
+        self.root.title(title)
         self.root.geometry("780x500")
         self.root.minsize(720, 460)
-        self.busy = False
         self.ui = queue.Queue()
         self.ports = []
-        self.logs = {}
-        for name in ("串口", "ADC", "SPI", "I2C", "PWM", "升级", "日志"):
-            self.logs[name] = ChannelLog(os.path.join(LOG_ROOT, name), name)
-        self.link = Link(lambda text: self.note("升级", text))
-        self.ema = [None, None, None]
-        self.raw = [[], [], []]
-        self.smooth = [[], [], []]
+        self.mod_lab = {}
+        others = [win for win in session.windows if win is not self]
+        if others:
+            src = others[0]
+            self.ema = list(src.ema)
+            self.raw = [list(ch) for ch in src.raw]
+            self.smooth = [list(ch) for ch in src.smooth]
+        else:
+            self.ema = [None, None, None]
+            self.raw = [[], [], []]
+            self.smooth = [[], [], []]
         self.show_volt = tk.BooleanVar(value=True)
         self.alpha = tk.DoubleVar(value=0.25)
         self.hex_mode = tk.BooleanVar(value=True)
+        session.windows.append(self)
 
         top = ttk.Frame(root, padding=6)
         top.pack(fill=tk.X)
         ttk.Label(top, text="USB").pack(side=tk.LEFT)
-        self.port_box = ttk.Combobox(top, width=46, state="readonly")
+        self.port_box = ttk.Combobox(top, width=42, state="readonly")
         self.port_box.pack(side=tk.LEFT, padx=4)
         ttk.Button(top, text="刷新", command=self.refresh).pack(side=tk.LEFT)
         self.conn_btn = ttk.Button(top, text="连接", command=self.toggle)
         self.conn_btn.pack(side=tk.LEFT, padx=4)
+        ttk.Button(top, text="新窗口", command=session.open_window).pack(side=tk.LEFT)
         self.status = ttk.Label(top, text="未连接")
         self.status.pack(side=tk.LEFT, padx=8)
 
@@ -86,16 +205,25 @@ class Host(object):
         self._build_pwm()
         self._build_ota()
         self._build_devlog()
-        self.book.bind("<<NotebookTabChanged>>", self.on_tab)
-        self.note("串口", "日志目录：%s" % LOG_ROOT)
-        self.note("串口", "请连接 1A86:FE0C。切页会要求板子关掉其它功能；板端还没接开关时会拒绝，串口收发和升级仍然可用。")
+        self.note_here("串口", "日志目录：%s" % LOG_ROOT)
+        self.note_here("串口", "请连接 1A86:FE0C。串口默认打开，其它功能点「打开」才发给板子。切页不会关掉已经打开的功能。")
         self.refresh()
-        self.root.after(80, self.pump)
+        self.sync_face()
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def note(self, channel, text):
+        self.session.broadcast(channel, text)
+
+    def note_here(self, channel, text):
         line = self.logs[channel].write(text)
         self.ui.put((channel, line))
+
+    def _switch(self, bar, name, mod):
+        ttk.Button(bar, text="打开", command=lambda: self.module_set(mod, OP_ON, name)).pack(side=tk.LEFT)
+        ttk.Button(bar, text="关闭", command=lambda: self.module_set(mod, OP_OFF, name)).pack(side=tk.LEFT, padx=4)
+        lab = ttk.Label(bar, width=4)
+        lab.pack(side=tk.LEFT, padx=(0, 8))
+        self.mod_lab[name] = lab
 
     def _view(self, parent, height=8):
         box = scrolledtext.ScrolledText(parent, height=height, font=("Consolas", 9))
@@ -107,6 +235,7 @@ class Host(object):
         self.book.add(page, text="串口")
         bar = ttk.Frame(page)
         bar.pack(fill=tk.X, padx=4, pady=4)
+        self._switch(bar, "串口", MOD_UART)
         ttk.Label(bar, text="波特率").pack(side=tk.LEFT)
         self.baud = ttk.Combobox(bar, width=10, state="readonly", values=list(BAUD_CODE.keys()))
         self.baud.set("115200")
@@ -123,8 +252,7 @@ class Host(object):
         self.book.add(page, text="ADC")
         bar = ttk.Frame(page)
         bar.pack(fill=tk.X, padx=4, pady=4)
-        ttk.Button(bar, text="开始", command=lambda: self.module_cmd(MOD_ADC, OP_ON, "ADC")).pack(side=tk.LEFT)
-        ttk.Button(bar, text="停止", command=lambda: self.module_cmd(MOD_ADC, OP_OFF, "ADC")).pack(side=tk.LEFT, padx=4)
+        self._switch(bar, "ADC", MOD_ADC)
         ttk.Checkbutton(bar, text="显示伏特（×11）", variable=self.show_volt).pack(side=tk.LEFT, padx=8)
         ttk.Label(bar, text="EMA").pack(side=tk.LEFT)
         ttk.Scale(bar, from_=0.05, to=1.0, variable=self.alpha, length=120).pack(side=tk.LEFT, padx=4)
@@ -137,6 +265,7 @@ class Host(object):
         self.book.add(page, text="SPI")
         bar = ttk.Frame(page)
         bar.pack(fill=tk.X, padx=4, pady=4)
+        self._switch(bar, "SPI", MOD_SPI)
         ttk.Label(bar, text="模式").pack(side=tk.LEFT)
         self.spi_mode = ttk.Combobox(bar, width=4, state="readonly", values=["0", "1", "2", "3"])
         self.spi_mode.set("0")
@@ -152,6 +281,7 @@ class Host(object):
         self.book.add(page, text="I2C")
         bar = ttk.Frame(page)
         bar.pack(fill=tk.X, padx=4, pady=4)
+        self._switch(bar, "I2C", MOD_I2C)
         self.i2c_role = ttk.Combobox(bar, width=6, state="readonly", values=["主机", "从机"])
         self.i2c_role.set("主机")
         self.i2c_role.pack(side=tk.LEFT)
@@ -171,6 +301,7 @@ class Host(object):
         self.book.add(page, text="PWM")
         bar = ttk.Frame(page)
         bar.pack(fill=tk.X, padx=4, pady=4)
+        self._switch(bar, "PWM", MOD_PWM)
         ttk.Label(bar, text="频率Hz").pack(side=tk.LEFT)
         self.pwm_hz = ttk.Entry(bar, width=8)
         self.pwm_hz.insert(0, "1000")
@@ -180,7 +311,6 @@ class Host(object):
         self.pwm_duty.insert(0, "50")
         self.pwm_duty.pack(side=tk.LEFT, padx=4)
         ttk.Button(bar, text="输出", command=self.pwm_out).pack(side=tk.LEFT)
-        ttk.Button(bar, text="停止", command=lambda: self.module_cmd(MOD_PWM, OP_OFF, "PWM")).pack(side=tk.LEFT, padx=4)
         self.view_pwm = self._view(page, 16)
 
     def _build_ota(self):
@@ -194,7 +324,7 @@ class Host(object):
         ttk.Button(bar, text="查询", command=lambda: self.run_bg(self.do_info)).pack(side=tk.LEFT)
         ttk.Button(bar, text="升级", command=lambda: self.run_bg(self.do_upgrade)).pack(side=tk.LEFT, padx=4)
         self.view_ota = self._view(page, 16)
-        self.note("升级", "选择加密.hex。不要点确认，新面自己留下。密钥：%s" % key_path())
+        self.note_here("升级", "选择加密.hex。不要点确认，新面自己留下。密钥：%s" % key_path())
 
     def _build_devlog(self):
         page = ttk.Frame(self.book)
@@ -209,7 +339,7 @@ class Host(object):
         ttk.Label(bar, text="条，最多 %u" % LOG_READ_MAX).pack(side=tk.LEFT)
         ttk.Button(bar, text="读取", command=lambda: self.run_log(self._log_count())).pack(side=tk.LEFT, padx=4)
         self.view_log = self._view(page, 16)
-        self.note("日志", "发 0xE6 读设备日志，序号 0 是最新一条。设备回 0x62 的 32 字节，这里按启动、紧急、日常解释。一次最多 %u 条。切到本页不关其它功能。" % LOG_READ_MAX)
+        self.note_here("日志", "发 0xE6 读设备日志，序号 0 是最新一条。设备回 0x62 的 32 字节，这里按启动、紧急、日常解释。一次最多 %u 条。读日志不关其它功能。" % LOG_READ_MAX)
 
     def refresh(self):
         self.ports = []
@@ -243,8 +373,7 @@ class Host(object):
     def toggle(self):
         if self.link.ser is not None:
             self.link.close()
-            self.conn_btn["text"] = "连接"
-            self.status["text"] = "未连接"
+            self.session.port_name = ""
             self.note("串口", "已断开")
             return
         item = self.selected()
@@ -259,42 +388,39 @@ class Host(object):
         except Exception as exc:
             self.note("串口", "打开失败：%s" % exc)
             return
-        self.conn_btn["text"] = "断开"
-        self.status["text"] = item.device
+        self.session.port_name = item.device
         self.note("串口", "已连接 %s" % item.device)
-        self.on_tab()
+        self.push_wanted()
 
-    def on_tab(self, _event=None):
-        if self.link.ser is None:
-            return
-        index = self.book.index(self.book.select())
-        names = ["串口", "ADC", "SPI", "I2C", "PWM", "升级", "日志"]
-        mods = [MOD_UART, MOD_ADC, MOD_SPI, MOD_I2C, MOD_PWM, None, None]
-        if index >= len(names):
-            return
-        current = names[index]
-        if current == "日志":
-            return
+    def push_wanted(self):
+        """连接之后，只把上位机记成「开」的功能再发一次。关着的不发。"""
 
         def work():
-            for i, mod in enumerate(mods):
-                if mod is None or i == index:
-                    continue
-                self.ctrl(mod, OP_OFF, names[i])
-            if mods[index] is not None:
-                self.ctrl(mods[index], OP_ON, current)
-            self.note(current, "已切到本页，其它功能已要求关闭")
+            for name, mod, _default in MODULES:
+                if self.session.want[name]:
+                    self.ctrl(mod, OP_ON, name)
 
         threading.Thread(target=work, daemon=True).start()
 
     def ctrl(self, mod, op, name):
+        word = "打开" if op == OP_ON else "关闭"
         kind, body = self.link.transact(CMD_CTRL, bytes([mod, op]), 0.4)
         if kind is None:
-            self.note(name, "%s 开关没有应答" % name)
+            self.note(name, "%s %s没有应答" % (name, word))
             return
         if kind == CMD_NACK:
             code = body[1] if len(body) > 1 else -1
-            self.note(name, "%s 开关被拒绝：%s（板端这步还没接上时会这样）" % (name, RES_NAME.get(code, str(code))))
+            self.note(name, "%s %s被拒绝：%s（板端还没接这个开关时会这样）" % (
+                name, word, RES_NAME.get(code, str(code))))
+            return
+        self.note(name, "%s已%s" % (name, word))
+
+    def module_set(self, mod, op, name):
+        self.session.want[name] = (op == OP_ON)
+        if self.link.ser is None:
+            self.note(name, "%s已记为%s，连接后发出" % (name, "打开" if op == OP_ON else "关闭"))
+            return
+        self.module_cmd(mod, op, name)
 
     def module_cmd(self, mod, op, name):
         if self.link.ser is None:
@@ -302,39 +428,69 @@ class Host(object):
             return
         threading.Thread(target=lambda: self.ctrl(mod, op, name), daemon=True).start()
 
+    def need_open(self, name):
+        if self.session.want.get(name):
+            return True
+        self.note(name, "这个功能还关着，先点打开")
+        return False
+
+    def sync_face(self):
+        linked = self.link.ser is not None and self.link.alive
+        self.conn_btn["text"] = "断开" if self.link.ser is not None else "连接"
+        if linked:
+            self.status["text"] = self.session.port_name or "已连接"
+        elif self.link.ser is None:
+            self.status["text"] = "未连接"
+        for name, lab in self.mod_lab.items():
+            lab["text"] = "开" if self.session.want.get(name) else "关"
+
+    def flush(self):
+        views = {"串口": self.view_uart, "ADC": self.view_adc, "SPI": self.view_spi,
+                 "I2C": self.view_i2c, "PWM": self.view_pwm, "升级": self.view_ota,
+                 "日志": self.view_log}
+        while True:
+            try:
+                channel, line = self.ui.get_nowait()
+            except queue.Empty:
+                break
+            box = views.get(channel)
+            if box is not None:
+                box.insert(tk.END, line + "\n")
+                box.see(tk.END)
+
     def run_bg(self, func):
-        if self.busy:
+        if self.session.busy:
             self.note("升级", "上一步还没结束")
             return
         if self.link.ser is None:
             self.note("升级", "还没有连接")
             return
-        self.busy = True
+        self.session.busy = True
 
         def wrap():
             try:
                 func()
             except Exception as exc:
                 self.note("升级", "中断：%s" % exc)
-            self.busy = False
+            self.session.busy = False
 
         threading.Thread(target=wrap, daemon=True).start()
 
     def run_log(self, count):
-        if self.busy:
+        if self.session.busy:
             self.note("日志", "上一步还没结束")
             return
         if self.link.ser is None:
             self.note("日志", "还没有连接")
             return
-        self.busy = True
+        self.session.busy = True
 
         def wrap():
             try:
                 self.do_read_logs(count)
             except Exception as exc:
                 self.note("日志", "中断：%s" % exc)
-            self.busy = False
+            self.session.busy = False
 
         threading.Thread(target=wrap, daemon=True).start()
 
@@ -406,6 +562,8 @@ class Host(object):
         return body
 
     def set_baud(self):
+        if not self.need_open("串口"):
+            return
         code = BAUD_CODE.get(self.baud.get())
         if code is None or self.link.ser is None:
             return
@@ -413,6 +571,8 @@ class Host(object):
         self.note("串口", "请求波特率 %s" % self.baud.get())
 
     def send_uart(self):
+        if not self.need_open("串口"):
+            return
         text = self.uart_send.get().strip()
         if not text or self.link.ser is None:
             return
@@ -479,6 +639,8 @@ class Host(object):
         self.module_send(CMD_PWM_OUT, struct.pack("<HH", hz & 0xFFFF, duty & 0xFFFF), "PWM")
 
     def module_send(self, cmd, data, name):
+        if not self.need_open(name):
+            return
         if self.link.ser is None:
             self.note(name, "还没有连接")
             return
@@ -536,43 +698,6 @@ class Host(object):
             return
         send_upgrade(self.link, faces, lambda text: self.note("升级", text), self.need_ack)
 
-    def pump(self):
-        views = {"串口": self.view_uart, "ADC": self.view_adc, "SPI": self.view_spi,
-                 "I2C": self.view_i2c, "PWM": self.view_pwm, "升级": self.view_ota,
-                 "日志": self.view_log}
-        while True:
-            try:
-                channel, line = self.ui.get_nowait()
-            except queue.Empty:
-                break
-            box = views.get(channel)
-            if box is not None:
-                box.insert(tk.END, line + "\n")
-                box.see(tk.END)
-        for frame in self.link.drain_side():
-            self.on_frame(frame)
-        self.draw_adc()
-        if self.link.ser is not None and not self.link.alive:
-            self.status["text"] = "连接中断"
-        self.root.after(80, self.pump)
-
-    def on_frame(self, frame):
-        kind = frame[2]
-        body = frame[3:-2]
-        if kind == CMD_UART_RX:
-            self.note("串口", "收 %s" % hex_line(body))
-        elif kind == CMD_ADC:
-            self.take_adc(body)
-            self.logs["ADC"].write("原始 " + hex_line(body))
-        elif kind == CMD_SPI:
-            self.note("SPI", "收 %s" % hex_line(body))
-        elif kind == CMD_I2C:
-            self.note("I2C", "收 %s" % hex_line(body))
-        elif kind == CMD_PWM_IN:
-            self.take_pwm(body)
-        else:
-            self.note("升级", "旁路帧 " + hex_line(frame))
-
     def take_adc(self, body):
         if len(body) < 4 or ((len(body) - 2) % 2) != 0:
             self.note("ADC", "样本长度不对：" + hex_line(body))
@@ -624,10 +749,11 @@ class Host(object):
             period, high, pwm_real(period), pwm_real(high)))
 
     def on_close(self):
-        self.link.close()
-        for item in self.logs.values():
-            item.close()
+        if self in self.session.windows:
+            self.session.windows.remove(self)
         self.root.destroy()
+        if not self.session.windows:
+            self.session.shutdown()
 
 
 def main():
@@ -638,7 +764,9 @@ def main():
         except Exception:
             pass
     root = tk.Tk()
-    Host(root)
+    root.withdraw()
+    session = Session(root)
+    session.open_window()
     root.mainloop()
 
 

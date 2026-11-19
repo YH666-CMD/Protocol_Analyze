@@ -205,6 +205,7 @@ class Link(object):
         self.reply_q = None
         self.wait_cmd = None
         self._io = threading.Lock()
+        self._gate = threading.Lock()
 
     def open(self, name):
         self.close()
@@ -291,31 +292,33 @@ class Link(object):
             self.ser.write(raw)
 
     def transact(self, cmd, data=b"", timeout=1.0, want_reply=True):
-        raw = pack(cmd, data)
-        self.log("发 %s" % hex_line(raw))
-        box = queue.Queue()
-        self.wait_cmd = cmd
-        self.reply_q = box
-        try:
-            self.write(raw)
-            end = time.time() + timeout
-            while time.time() < end:
-                try:
-                    frame = box.get(timeout=0.05)
-                except queue.Empty:
-                    if not want_reply:
-                        return "silent", b""
-                    continue
-                self.log("收 %s" % hex_line(frame))
-                self.log(explain(frame))
-                return frame[2], frame[3:-2]
-            if not want_reply:
-                return "silent", b""
-            self.log("超时：%s 秒内没有应答" % timeout)
-            return None, b""
-        finally:
-            self.reply_q = None
-            self.wait_cmd = None
+        """同一条 USB 上一次只跑一条命令。多个窗口点按钮时在这里排队。"""
+        with self._gate:
+            raw = pack(cmd, data)
+            self.log("发 %s" % hex_line(raw))
+            box = queue.Queue()
+            self.wait_cmd = cmd
+            self.reply_q = box
+            try:
+                self.write(raw)
+                end = time.time() + timeout
+                while time.time() < end:
+                    try:
+                        frame = box.get(timeout=0.05)
+                    except queue.Empty:
+                        if not want_reply:
+                            return "silent", b""
+                        continue
+                    self.log("收 %s" % hex_line(frame))
+                    self.log(explain(frame))
+                    return frame[2], frame[3:-2]
+                if not want_reply:
+                    return "silent", b""
+                self.log("超时：%s 秒内没有应答" % timeout)
+                return None, b""
+            finally:
+                self.reply_q = None
+                self.wait_cmd = None
 
     def drain_side(self):
         frames = []
