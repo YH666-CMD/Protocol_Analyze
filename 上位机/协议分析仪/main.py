@@ -19,15 +19,17 @@ from ota_pkg import load_cipher_faces, send_upgrade
 from process.scale import adc_volts, pwm_real
 from process.smooth import ema_step, linear_resample
 from protocol import (
-    BAUD_CODE, CMD_ADC, CMD_CTRL, CMD_I2C, CMD_I2C_CFG, CMD_INFO, CMD_NACK,
-    CMD_PWM_IN, CMD_PWM_OUT, CMD_SPI, CMD_SPI_CFG, CMD_UART_LINE, CMD_UART_RX,
-    CMD_UART_TX, MOD_ADC, MOD_I2C, MOD_PWM, MOD_SPI, MOD_UART, OP_OFF, OP_ON,
-    RES_NAME, VID_CDC, VID_CH340, Link, hex_line,
+    BAUD_CODE, CMD_ADC, CMD_CTRL, CMD_I2C, CMD_I2C_CFG, CMD_INFO, CMD_LOG,
+    CMD_LOG_RSP, CMD_NACK, CMD_PWM_IN, CMD_PWM_OUT, CMD_SPI, CMD_SPI_CFG,
+    CMD_UART_LINE, CMD_UART_RX, CMD_UART_TX, MOD_ADC, MOD_I2C, MOD_PWM, MOD_SPI,
+    MOD_UART, OP_OFF, OP_ON, RES_NAME, VID_CDC, VID_CH340, Link, describe_log,
+    hex_line,
 )
 
 HERE = app_dir()
 LOG_ROOT = os.path.join(HERE, "日志")
 KEEP = 240
+LOG_READ_MAX = 32
 COLORS = ("#1f77b4", "#d62728", "#2ca02c")
 
 
@@ -53,7 +55,7 @@ class Host(object):
         self.ui = queue.Queue()
         self.ports = []
         self.logs = {}
-        for name in ("串口", "ADC", "SPI", "I2C", "PWM", "升级"):
+        for name in ("串口", "ADC", "SPI", "I2C", "PWM", "升级", "日志"):
             self.logs[name] = ChannelLog(os.path.join(LOG_ROOT, name), name)
         self.link = Link(lambda text: self.note("升级", text))
         self.ema = [None, None, None]
@@ -83,6 +85,7 @@ class Host(object):
         self._build_i2c()
         self._build_pwm()
         self._build_ota()
+        self._build_devlog()
         self.book.bind("<<NotebookTabChanged>>", self.on_tab)
         self.note("串口", "日志目录：%s" % LOG_ROOT)
         self.note("串口", "请连接 1A86:FE0C。切页会要求板子关掉其它功能；板端还没接开关时会拒绝，串口收发和升级仍然可用。")
@@ -193,6 +196,21 @@ class Host(object):
         self.view_ota = self._view(page, 16)
         self.note("升级", "选择加密.hex。不要点确认，新面自己留下。密钥：%s" % key_path())
 
+    def _build_devlog(self):
+        page = ttk.Frame(self.book)
+        self.book.add(page, text="日志")
+        bar = ttk.Frame(page)
+        bar.pack(fill=tk.X, padx=4, pady=4)
+        ttk.Button(bar, text="读最新一条", command=lambda: self.run_log(1)).pack(side=tk.LEFT)
+        ttk.Label(bar, text="最近").pack(side=tk.LEFT, padx=(8, 0))
+        self.log_count = ttk.Entry(bar, width=6)
+        self.log_count.insert(0, "8")
+        self.log_count.pack(side=tk.LEFT, padx=4)
+        ttk.Label(bar, text="条，最多 %u" % LOG_READ_MAX).pack(side=tk.LEFT)
+        ttk.Button(bar, text="读取", command=lambda: self.run_log(self._log_count())).pack(side=tk.LEFT, padx=4)
+        self.view_log = self._view(page, 16)
+        self.note("日志", "发 0xE6 读设备日志，序号 0 是最新一条。设备回 0x62 的 32 字节，这里按启动、紧急、日常解释。一次最多 %u 条。切到本页不关其它功能。" % LOG_READ_MAX)
+
     def refresh(self):
         self.ports = []
         labels = []
@@ -250,9 +268,13 @@ class Host(object):
         if self.link.ser is None:
             return
         index = self.book.index(self.book.select())
-        names = ["串口", "ADC", "SPI", "I2C", "PWM", "升级"]
-        mods = [MOD_UART, MOD_ADC, MOD_SPI, MOD_I2C, MOD_PWM, None]
+        names = ["串口", "ADC", "SPI", "I2C", "PWM", "升级", "日志"]
+        mods = [MOD_UART, MOD_ADC, MOD_SPI, MOD_I2C, MOD_PWM, None, None]
+        if index >= len(names):
+            return
         current = names[index]
+        if current == "日志":
+            return
 
         def work():
             for i, mod in enumerate(mods):
@@ -297,6 +319,79 @@ class Host(object):
             self.busy = False
 
         threading.Thread(target=wrap, daemon=True).start()
+
+    def run_log(self, count):
+        if self.busy:
+            self.note("日志", "上一步还没结束")
+            return
+        if self.link.ser is None:
+            self.note("日志", "还没有连接")
+            return
+        self.busy = True
+
+        def wrap():
+            try:
+                self.do_read_logs(count)
+            except Exception as exc:
+                self.note("日志", "中断：%s" % exc)
+            self.busy = False
+
+        threading.Thread(target=wrap, daemon=True).start()
+
+    def _log_count(self):
+        try:
+            count = int(self.log_count.get().strip())
+        except ValueError:
+            count = 8
+        count = self._cap_log_count(count)
+        self.log_count.delete(0, tk.END)
+        self.log_count.insert(0, str(count))
+        return count
+
+    def _cap_log_count(self, count):
+        """设备里能有两千多条。一次读太多会把这条 USB 占住，所以这里卡住。"""
+        if count < 1:
+            return 1
+        if count > LOG_READ_MAX:
+            self.note("日志", "一次最多读 %u 条，多出来的不读" % LOG_READ_MAX)
+            return LOG_READ_MAX
+        return count
+
+    def do_read_logs(self, count):
+        count = self._cap_log_count(count)
+        self.note("日志", "—— 读取 %u 条 ——" % count)
+        kind, body = self.link.transact(CMD_LOG, struct.pack("<I", 0), 1.0)
+        if not self._take_log(kind, body, 0):
+            return
+        seq = struct.unpack_from("<I", body)[0]
+        left = count - 1
+        while left > 0 and seq > 1:
+            seq -= 1
+            left -= 1
+            kind, body = self.link.transact(CMD_LOG, struct.pack("<I", seq), 1.0)
+            if not self._take_log(kind, body, seq):
+                return
+
+    def _take_log(self, kind, body, seq):
+        if kind is None:
+            self.note("日志", "序号 %s 没有回复" % ("最新" if seq == 0 else str(seq)))
+            return False
+        if kind == CMD_NACK:
+            code = body[1] if len(body) > 1 else -1
+            if code == 4:
+                if seq == 0:
+                    self.note("日志", "设备里还没有日志")
+                else:
+                    self.note("日志", "序号 %u 没有记录，再早的也停在这里" % seq)
+            else:
+                self.note("日志", "被拒绝：%s" % RES_NAME.get(code, str(code)))
+            return False
+        if kind != CMD_LOG_RSP or len(body) != 32:
+            self.note("日志", "回复不是一条 32 字节日志")
+            return False
+        self.note("日志", describe_log(body))
+        self.note("日志", "原始 " + hex_line(body))
+        return True
 
     def need_ack(self, cmd, data, timeout, step):
         kind, body = self.link.transact(cmd, data, timeout)
@@ -443,7 +538,8 @@ class Host(object):
 
     def pump(self):
         views = {"串口": self.view_uart, "ADC": self.view_adc, "SPI": self.view_spi,
-                 "I2C": self.view_i2c, "PWM": self.view_pwm, "升级": self.view_ota}
+                 "I2C": self.view_i2c, "PWM": self.view_pwm, "升级": self.view_ota,
+                 "日志": self.view_log}
         while True:
             try:
                 channel, line = self.ui.get_nowait()

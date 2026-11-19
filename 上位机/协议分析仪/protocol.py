@@ -2,8 +2,10 @@
 """USB 帧。和固件 frame.h 同一套：A5、长度、指令、CRC-16/CCITT-FALSE。"""
 
 import queue
+import struct
 import threading
 import time
+import zlib
 
 try:
     import serial
@@ -22,6 +24,7 @@ CMD_ADC = 0x30
 CMD_SPI = 0x40
 CMD_I2C = 0x50
 CMD_INFO_RSP = 0x61
+CMD_LOG_RSP = 0x62
 CMD_PING = 0x80
 CMD_CTRL = 0x81
 CMD_UART_TX = 0x90
@@ -34,6 +37,7 @@ CMD_INFO = 0xE0
 CMD_START = 0xE1
 CMD_DATA = 0xE2
 CMD_END = 0xE3
+CMD_LOG = 0xE6
 
 MOD_UART = 0x01
 MOD_PWM = 0x02
@@ -54,6 +58,31 @@ RES_NAME = {
     4: "状态不对",
     5: "这次调用超时",
 }
+LOG_KIND_NAME = {1: "日常", 2: "紧急", 3: "启动"}
+LOG_RESET_NAME = {
+    0: "还没读过复位原因",
+    1: "引脚复位",
+    2: "上电或掉电复位",
+    3: "软件复位",
+    4: "独立看门狗复位",
+    5: "窗口看门狗复位",
+    6: "低功耗复位",
+    7: "没有认出的复位标志",
+}
+LOG_FAULT_NAME = {
+    1: "任务表不合法",
+    2: "任务里又进了一次调度",
+    3: "任务耗时超过自己的周期",
+    4: "毫秒时基没有走",
+    5: "一轮任务超时，看门狗准备放弃喂狗",
+    6: "目标任务邮箱里还有没处理的事件",
+    10: "日志写入 FLASH 失败",
+    11: "任务函数返回了错误",
+    12: "任务超过自己的周期还没返回",
+    13: "硬件错误",
+    14: "试图擦写 Boot 或当前正在运行的这一面",
+}
+LOG_TASK_NAME = {0: "日志", 1: "心跳", 2: "串口", 3: "USB", 4: "试运行确认"}
 STATE_NAME = {0: "空", 1: "正在写", 2: "待试运行", 3: "良好", 4: "坏"}
 BAUD_CODE = {
     "115200": 1,
@@ -99,9 +128,51 @@ def slot_name(value):
     return "0x%02X" % value
 
 
+def describe_log(body):
+    """把固件 log_rec_t 的 32 字节译成一句中文。布局和 log.h 一致，CRC 是前 28 字节的 zlib CRC-32。"""
+    if len(body) != 32:
+        return "日志长度不是 32 字节"
+    seq, kind, module, event, _rsv, arg, _rsv2, code, extra, ms, _rsv3, crc = struct.unpack(
+        "<IBBBBHHIIIII", body)
+    calc = zlib.crc32(body[:28]) & 0xFFFFFFFF
+    if calc == crc:
+        check = "CRC 对"
+    else:
+        check = "CRC 不对（算得 %08X，记录里 %08X）" % (calc, crc)
+    head = "序号 %u，上电后 %u ms，%s" % (seq, ms, check)
+    if kind == 3:
+        trial = "无" if event == 0xFF else slot_name(event)
+        reason = LOG_RESET_NAME.get(code, "原因码 %u" % code)
+        return "启动记录，%s。正在跑 %s 面。复位：%s。试运行：%s，次数 %u。" % (
+            head, slot_name(module), reason, trial, arg)
+    if kind == 2:
+        return "紧急记录，%s。%s" % (head, _describe_emerg(module, arg, code, extra))
+    if kind == 1:
+        return "日常记录，%s。模块 %u，事件 %u，参数 %u。" % (head, module, event, arg)
+    return "未知类型 %u，%s。模块 %u，事件 %u，参数 %u，码 %u，附加 %08X。" % (
+        kind, head, module, event, arg, code, extra)
+
+
+def _describe_emerg(module, arg, code, extra):
+    if code == 12:
+        task = LOG_TASK_NAME.get(module, "任务 %u" % module)
+        return "%s 超过自己的周期还没返回，已经 %u ms（截断值 %u）。" % (task, extra, arg)
+    if code == 13:
+        return "硬件错误 HardFault，出错地址 0x%08X。" % extra
+    if module == 0 and arg == 0 and code > 14:
+        return "看门狗准备放弃喂狗，这一轮已经用了 %u ms。" % code
+    fault = LOG_FAULT_NAME.get(code)
+    if fault is not None:
+        who = LOG_TASK_NAME.get(module, "模块 %u" % module)
+        return "%s。%s，参数 %u，附加 %u。" % (fault, who, arg, extra)
+    return "故障码 %u。模块 %u，参数 %u，附加 %u。" % (code, module, arg, extra)
+
+
 def explain(frame):
     kind = frame[2]
     body = frame[3:-2]
+    if kind == CMD_LOG_RSP:
+        return describe_log(body)
     if kind == CMD_INFO_RSP and len(body) == 13:
         import struct
         run, version, st_a, st_b, trial, count, addr = struct.unpack("<BIBBBBI", body)
@@ -198,6 +269,8 @@ class Link(object):
         if kind in (CMD_ACK, CMD_NACK) and body and body[0] == cmd:
             return True
         if cmd == CMD_INFO and kind == CMD_INFO_RSP:
+            return True
+        if cmd == CMD_LOG and kind == CMD_LOG_RSP:
             return True
         return False
 
