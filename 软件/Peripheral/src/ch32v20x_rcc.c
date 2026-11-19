@@ -68,8 +68,6 @@
 #define BDCTLR_ADDRESS              (PERIPH_BASE + BDCTLR_OFFSET)
 
 
-static __I uint8_t APBAHBPrescTable[16] = {0, 0, 0, 0, 1, 2, 3, 4, 1, 2, 3, 4, 6, 7, 8, 9};
-static __I uint8_t ADCPrescTable[4] = {2, 4, 6, 8};
 
 /*********************************************************************
  * @fn      RCC_DeInit
@@ -551,89 +549,12 @@ void RCC_RTCCLKCmd(FunctionalState NewState)
  */
 void RCC_GetClocksFreq(RCC_ClocksTypeDef* RCC_Clocks)
 {
-    uint32_t tmp = 0, pllmull = 0, pllsource = 0, presc = 0;
-
-    tmp = RCC->CFGR0 & CFGR0_SWS_Mask;
-
-    switch (tmp)
-    {
-      case 0x00:
-        RCC_Clocks->SYSCLK_Frequency = HSI_VALUE;
-        break;
-
-      case 0x04:
-        RCC_Clocks->SYSCLK_Frequency = HSE_VALUE;
-        break;
-
-      case 0x08:
-        pllmull = RCC->CFGR0 & CFGR0_PLLMull_Mask;
-        pllsource = RCC->CFGR0 & CFGR0_PLLSRC_Mask;
-
-        pllmull = ( pllmull >> 18) + 2;
-
-        if(pllmull == 17) pllmull = 18;
-
-
-        if (pllsource == 0x00)
-        {
-          if(EXTEN->EXTEN_CTR & EXTEN_PLL_HSI_PRE){
-              RCC_Clocks->SYSCLK_Frequency = (HSI_VALUE) * pllmull;
-          }
-          else{
-              RCC_Clocks->SYSCLK_Frequency = (HSI_VALUE >>1) * pllmull;
-          }
-        }
-        else
-        {
-#if defined (CH32V20x_D8W) || defined (CH32V20x_D8)
-          if(((RCC->CFGR0 & (3<<22)) == (3<<22)) && (RCC_USB5PRE_JUDGE()== SET))
-          {
-              RCC_Clocks->SYSCLK_Frequency = ((HSE_VALUE>>1)) * pllmull;
-          }
-          else
-#endif
-          if ((RCC->CFGR0 & CFGR0_PLLXTPRE_Mask) != (uint32_t)RESET)
-          {
-#if defined (CH32V20x_D8) || defined (CH32V20x_D8W)
-              RCC_Clocks->SYSCLK_Frequency = ((HSE_VALUE>>2) >> 1) * pllmull;
-#else
-            RCC_Clocks->SYSCLK_Frequency = (HSE_VALUE >> 1) * pllmull;
-#endif
-          }
-          else
-          {
-#if defined (CH32V20x_D8) || defined (CH32V20x_D8W)
-              RCC_Clocks->SYSCLK_Frequency = (HSE_VALUE>>2) * pllmull;
-#else
-            RCC_Clocks->SYSCLK_Frequency = HSE_VALUE * pllmull;
-#endif
-
-          }
-        }
-
-        break;
-
-      default:
-        RCC_Clocks->SYSCLK_Frequency = HSI_VALUE;
-        break;
-    }
-
-    tmp = RCC->CFGR0 & CFGR0_HPRE_Set_Mask;
-    tmp = tmp >> 4;
-    presc = APBAHBPrescTable[tmp];
-    RCC_Clocks->HCLK_Frequency = RCC_Clocks->SYSCLK_Frequency >> presc;
-    tmp = RCC->CFGR0 & CFGR0_PPRE1_Set_Mask;
-    tmp = tmp >> 8;
-    presc = APBAHBPrescTable[tmp];
-    RCC_Clocks->PCLK1_Frequency = RCC_Clocks->HCLK_Frequency >> presc;
-    tmp = RCC->CFGR0 & CFGR0_PPRE2_Set_Mask;
-    tmp = tmp >> 11;
-    presc = APBAHBPrescTable[tmp];
-    RCC_Clocks->PCLK2_Frequency = RCC_Clocks->HCLK_Frequency >> presc;
-    tmp = RCC->CFGR0 & CFGR0_ADCPRE_Set_Mask;
-    tmp = tmp >> 14;
-    presc = ADCPrescTable[tmp];
-    RCC_Clocks->ADCCLK_Frequency = RCC_Clocks->PCLK2_Frequency / presc;
+    /* 系统时钟固定 96MHz，APB1 48MHz，APB2 96MHz，ADC 时钟 12MHz。 */
+    RCC_Clocks->SYSCLK_Frequency = 96000000;
+    RCC_Clocks->HCLK_Frequency = 96000000;
+    RCC_Clocks->PCLK1_Frequency = 48000000;
+    RCC_Clocks->PCLK2_Frequency = 96000000;
+    RCC_Clocks->ADCCLK_Frequency = 12000000;
 }
 
 /*********************************************************************

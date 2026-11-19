@@ -40,6 +40,16 @@ MODULES = (
 )
 
 
+def i2c_line(body):
+    if not body:
+        return "空帧"
+    if body[0] == 1:
+        if len(body) == 1:
+            return "扫到 没有地址应答"
+        return "扫到 " + " ".join("%02X" % b for b in body[1:])
+    return "收 " + hex_line(body[1:])
+
+
 def show_in_taskbar(win):
     """根窗口藏起来之后，每个新窗口仍要单独出现在任务栏。"""
     if sys.platform != "win32":
@@ -126,7 +136,7 @@ class Session(object):
         elif kind == CMD_SPI:
             self.broadcast("SPI", "收 %s" % hex_line(body))
         elif kind == CMD_I2C:
-            self.broadcast("I2C", "收 %s" % hex_line(body))
+            self.broadcast("I2C", i2c_line(body))
         elif kind == CMD_PWM_IN:
             if self.windows:
                 self.windows[0].take_pwm(body)
@@ -285,12 +295,21 @@ class Host(object):
         self.i2c_role = ttk.Combobox(bar, width=6, state="readonly", values=["主机", "从机"])
         self.i2c_role.set("主机")
         self.i2c_role.pack(side=tk.LEFT)
+        self.i2c_spd = ttk.Combobox(bar, width=6, state="readonly", values=["100k", "400k"])
+        self.i2c_spd.set("100k")
+        self.i2c_spd.pack(side=tk.LEFT, padx=4)
+        ttk.Button(bar, text="速率", command=self.i2c_speed).pack(side=tk.LEFT)
         ttk.Label(bar, text="地址").pack(side=tk.LEFT, padx=4)
         self.i2c_addr = ttk.Entry(bar, width=8)
         self.i2c_addr.insert(0, "50")
         self.i2c_addr.pack(side=tk.LEFT)
         ttk.Button(bar, text="切换", command=self.i2c_cfg).pack(side=tk.LEFT, padx=4)
         ttk.Button(bar, text="扫描地址", command=self.i2c_scan).pack(side=tk.LEFT)
+        ttk.Label(bar, text="读长").pack(side=tk.LEFT, padx=4)
+        self.i2c_len = ttk.Entry(bar, width=4)
+        self.i2c_len.insert(0, "10")
+        self.i2c_len.pack(side=tk.LEFT)
+        ttk.Button(bar, text="读取", command=self.i2c_read).pack(side=tk.LEFT, padx=4)
         self.i2c_send = ttk.Entry(bar)
         self.i2c_send.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=4)
         ttk.Button(bar, text="发送", command=self.i2c_tx).pack(side=tk.LEFT)
@@ -609,6 +628,11 @@ class Host(object):
         self.note("SPI", "请求发送 %s" % hex_line(raw))
         self.module_send(CMD_SPI_CFG, bytes([int(self.spi_mode.get()), 1]) + raw[:40], "SPI")
 
+    def i2c_speed(self):
+        fast = 0 if self.i2c_spd.get() == "100k" else 1
+        self.note("I2C", "请求速率 %s" % self.i2c_spd.get())
+        self.module_send(CMD_I2C_CFG, bytes([0, 0, 4, fast]), "I2C")
+
     def i2c_cfg(self):
         role = 0 if self.i2c_role.get() == "主机" else 1
         addr = self._addr(self.i2c_addr.get())
@@ -616,8 +640,27 @@ class Host(object):
         self.module_send(CMD_I2C_CFG, bytes([role, addr, 0]), "I2C")
 
     def i2c_scan(self):
+        if self.i2c_role.get() != "主机":
+            self.note("I2C", "扫描要先切到主机")
+            return
         self.note("I2C", "请求扫描 7 位地址")
         self.module_send(CMD_I2C_CFG, bytes([0, 0, 1]), "I2C")
+
+    def i2c_read(self):
+        if self.i2c_role.get() != "主机":
+            self.note("I2C", "读取长度只在主机用。从机有数据时自己拉低通知脚")
+            return
+        try:
+            n = int(self.i2c_len.get())
+        except ValueError:
+            self.note("I2C", "读长要是 1 到 40 的整数")
+            return
+        if n < 1 or n > 40:
+            self.note("I2C", "读长要是 1 到 40 的整数")
+            return
+        addr = self._addr(self.i2c_addr.get())
+        self.note("I2C", "请求读取 %u 字节" % n)
+        self.module_send(CMD_I2C_CFG, bytes([0, addr, 3, n]), "I2C")
 
     def i2c_tx(self):
         raw = self._hex_bytes(self.i2c_send.get(), "I2C")

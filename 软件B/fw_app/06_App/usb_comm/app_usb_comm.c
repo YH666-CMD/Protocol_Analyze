@@ -15,6 +15,7 @@
 #include "../../03_Driver/pwm_in/drv_pwm_in.h"
 #include "../../03_Driver/pwm_out/drv_pwm_out.h"
 #include "../spi_analyze/app_spi_analyze.h"
+#include "../i2c_comm/app_i2c_parse.h"
 #include "frame.h"
 #include "ring_buffer.h"
 #include "usb_cfg.h"
@@ -934,6 +935,12 @@ static result_t usb_on_spi(uint8_t cmd, const uint8_t *data, uint16_t len)
     return app_spi_cfg(data, len);
 }
 
+static result_t usb_on_i2c(uint8_t cmd, const uint8_t *data, uint16_t len)
+{
+    (void)cmd;
+    return app_i2c_cfg(data, len);
+}
+
 static const usb_cmd_row_t s_cmd[] =
 {
     { FRAME_CMD_PING,      1u, usb_on_ping      },
@@ -941,6 +948,7 @@ static const usb_cmd_row_t s_cmd[] =
     { FRAME_CMD_UART_TX,   0u, usb_on_uart_tx   },
     { FRAME_CMD_UART_LINE, 1u, usb_on_uart_line },
     { FRAME_CMD_SPI_CFG,   1u, usb_on_spi       },
+    { FRAME_CMD_I2C_CFG,   1u, usb_on_i2c       },
     { FRAME_CMD_OTA_INFO,  0u, usb_on_ota_info  },
     { FRAME_CMD_OTA_START, 1u, usb_on_ota_start },
     { FRAME_CMD_OTA_DATA,  0u, usb_on_ota_data  },
@@ -1212,6 +1220,30 @@ static void usb_up_adc(void)
     }
 }
 
+static void usb_up_i2c(void)
+{
+    uint8_t raw[FRAME_DATA_MAX];
+    uint8_t pkt[FRAME_MAX];
+    uint16_t n;
+    uint16_t packed;
+    uint16_t room;
+
+    room = drv_usb.pf_tx_ready();
+    if (room < (uint16_t)(FRAME_OH + 1u + I2C_IO_MAX))
+    {
+        return;
+    }
+    if (!drv_i2c.pf_take(raw, (uint16_t)sizeof(raw), &n))
+    {
+        return;
+    }
+    if (frame_sw_driver.pf_pack(FRAME_CMD_I2C, raw, n, pkt, (uint16_t)sizeof(pkt), &packed) != RES_OK ||
+        drv_usb.pf_tx(pkt, packed) != RES_OK)
+    {
+        return;
+    }
+}
+
 result_t app_usb_comm_init(void)
 {
 #if (USB_LOG_ENABLE != 0u) && (PRINT_ENABLE != 0u)
@@ -1229,8 +1261,10 @@ result_t app_usb_comm_on_tick(uint32_t now_ms, uint32_t elapsed_ms, uint32_t eve
     (void)event;
 
     usb_down();
+    drv_i2c.pf_poll();
     usb_up_uart();
     usb_up_adc();
     usb_up_spi();
+    usb_up_i2c();
     return RES_OK;
 }
