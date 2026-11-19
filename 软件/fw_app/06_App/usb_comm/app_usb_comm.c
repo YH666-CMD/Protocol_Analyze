@@ -14,6 +14,7 @@
 #include "../../03_Driver/i2c/drv_i2c.h"
 #include "../../03_Driver/pwm_in/drv_pwm_in.h"
 #include "../../03_Driver/pwm_out/drv_pwm_out.h"
+#include "../spi_analyze/app_spi_analyze.h"
 #include "frame.h"
 #include "ring_buffer.h"
 #include "usb_cfg.h"
@@ -926,12 +927,20 @@ static result_t usb_on_log(uint8_t cmd, const uint8_t *data, uint16_t len)
     return app_usb_comm_report(FRAME_CMD_LOG_RSP, body, LOG_REC_BYTES);
 }
 
+/* 模式不在 0～3，或动作不是「只改模式 / 发送」，由 app_spi_cfg 回参数不对。没打开回状态不对。 */
+static result_t usb_on_spi(uint8_t cmd, const uint8_t *data, uint16_t len)
+{
+    (void)cmd;
+    return app_spi_cfg(data, len);
+}
+
 static const usb_cmd_row_t s_cmd[] =
 {
     { FRAME_CMD_PING,      1u, usb_on_ping      },
     { FRAME_CMD_CTRL,      1u, usb_on_ctrl      },
     { FRAME_CMD_UART_TX,   0u, usb_on_uart_tx   },
     { FRAME_CMD_UART_LINE, 1u, usb_on_uart_line },
+    { FRAME_CMD_SPI_CFG,   1u, usb_on_spi       },
     { FRAME_CMD_OTA_INFO,  0u, usb_on_ota_info  },
     { FRAME_CMD_OTA_START, 1u, usb_on_ota_start },
     { FRAME_CMD_OTA_DATA,  0u, usb_on_ota_data  },
@@ -1073,6 +1082,70 @@ static void usb_up_uart(void)
     }
 }
 
+/* 一拍最多两帧，给串口留出发送余量。40 字节能进一帧，多出来的下次再报。 */
+static void usb_up_spi(void)
+{
+    rb_t *rb;
+    uint8_t raw[FRAME_DATA_MAX];
+    uint8_t pkt[FRAME_MAX];
+    uint8_t n;
+    uint16_t room;
+    uint16_t avail;
+    uint16_t take;
+    uint16_t packed;
+
+    rb = drv_spi.pf_rx_ring();
+    if (rb == NULL)
+    {
+        return;
+    }
+
+    n = 0u;
+    while (n < 2u)
+    {
+        room = drv_usb.pf_tx_ready();
+        if (room < FRAME_MIN)
+        {
+            return;
+        }
+
+        avail = rb_sw_driver.pf_rb_available(rb);
+        if (avail == 0u)
+        {
+            return;
+        }
+
+        take = FRAME_DATA_MAX;
+        if (take > (uint16_t)(room - FRAME_OH))
+        {
+            take = (uint16_t)(room - FRAME_OH);
+        }
+        if (take > avail)
+        {
+            take = avail;
+        }
+        if (take == 0u)
+        {
+            return;
+        }
+
+        if (rb_sw_driver.pf_rb_read_buf(rb, raw, take) != take)
+        {
+            return;
+        }
+        if (frame_sw_driver.pf_pack(FRAME_CMD_SPI, raw, take, pkt, (uint16_t)sizeof(pkt), &packed) != RES_OK ||
+            drv_usb.pf_tx(pkt, packed) != RES_OK)
+        {
+            if (rb_sw_driver.pf_rb_available(rb) == 0u)
+            {
+                (void)rb_sw_driver.pf_rb_write_buf(rb, raw, take);
+            }
+            return;
+        }
+        n++;
+    }
+}
+
 result_t app_usb_comm_init(void)
 {
 #if (USB_LOG_ENABLE != 0u) && (PRINT_ENABLE != 0u)
@@ -1091,5 +1164,6 @@ result_t app_usb_comm_on_tick(uint32_t now_ms, uint32_t elapsed_ms, uint32_t eve
 
     usb_down();
     usb_up_uart();
+    usb_up_spi();
     return RES_OK;
 }
