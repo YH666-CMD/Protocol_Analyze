@@ -12,7 +12,7 @@
 #define FW_APP_00_SYSTEM_SYSTEM_CONFIG_H_
 
 #define SCHED_TICK_HZ                 1000u     /* 1 ms 一个节拍 */
-#define SCHED_TASK_MAX                8u        /* 任务表容量 */
+#define SCHED_TASK_MAX                10u       /* 任务表容量。现在只用 5 个，后面外设再加，不要超过 10 */
 #define SCHED_TIME_MEASURE_ENABLE     1u        /* 1：记录每个任务本次耗时，并在超过周期时报错 */
 
 #define SCHED_ID_LOG                  0u        /* 日志任务 */

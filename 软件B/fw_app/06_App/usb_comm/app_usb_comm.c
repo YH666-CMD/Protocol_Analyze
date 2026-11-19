@@ -9,6 +9,11 @@
 #include "config.h"
 #include "drv_usb.h"
 #include "drv_uart.h"
+#include "../../03_Driver/adc/drv_adc.h"
+#include "../../03_Driver/spi/drv_spi.h"
+#include "../../03_Driver/i2c/drv_i2c.h"
+#include "../../03_Driver/pwm_in/drv_pwm_in.h"
+#include "../../03_Driver/pwm_out/drv_pwm_out.h"
 #include "frame.h"
 #include "ring_buffer.h"
 #include "usb_cfg.h"
@@ -331,17 +336,212 @@ static result_t usb_flag_clr(const uint8_t *arg, uint16_t arg_len)
 
 #endif
 
+/* 串口上报默认开。关只停上报，不关 USB，也不关接收。 */
+static uint8_t s_uart_report = 1u;
+static uint8_t s_ota_on;
+
+static result_t usb_sw_len(const uint8_t *arg, uint16_t arg_len)
+{
+    (void)arg;
+    if (arg_len != 0u)
+    {
+        return RES_PARAM;
+    }
+    return RES_OK;
+}
+
+static void usb_biz_halt(void)
+{
+    s_uart_report = 0u;
+    drv_adc.pf_stop();
+    drv_spi.pf_stop();
+    drv_i2c.pf_stop();
+    drv_pwm_out.pf_stop();
+    drv_pwm_in.pf_stop();
+}
+
+static result_t usb_uart_on(const uint8_t *arg, uint16_t arg_len)
+{
+    result_t rc;
+
+    rc = usb_sw_len(arg, arg_len);
+    if (rc != RES_OK)
+    {
+        return rc;
+    }
+    if (s_ota_on != 0u)
+    {
+        return RES_STATE;
+    }
+    s_uart_report = 1u;
+    return RES_OK;
+}
+
+static result_t usb_uart_off(const uint8_t *arg, uint16_t arg_len)
+{
+    result_t rc;
+
+    rc = usb_sw_len(arg, arg_len);
+    if (rc != RES_OK)
+    {
+        return rc;
+    }
+    s_uart_report = 0u;
+    return RES_OK;
+}
+
+static result_t usb_adc_on(const uint8_t *arg, uint16_t arg_len)
+{
+    result_t rc;
+
+    rc = usb_sw_len(arg, arg_len);
+    if (rc != RES_OK)
+    {
+        return rc;
+    }
+    if (s_ota_on != 0u)
+    {
+        return RES_STATE;
+    }
+    return drv_adc.pf_start();
+}
+
+static result_t usb_adc_off(const uint8_t *arg, uint16_t arg_len)
+{
+    result_t rc;
+
+    rc = usb_sw_len(arg, arg_len);
+    if (rc != RES_OK)
+    {
+        return rc;
+    }
+    drv_adc.pf_stop();
+    return RES_OK;
+}
+
+static result_t usb_spi_on(const uint8_t *arg, uint16_t arg_len)
+{
+    result_t rc;
+
+    rc = usb_sw_len(arg, arg_len);
+    if (rc != RES_OK)
+    {
+        return rc;
+    }
+    if (s_ota_on != 0u)
+    {
+        return RES_STATE;
+    }
+    return drv_spi.pf_start();
+}
+
+static result_t usb_spi_off(const uint8_t *arg, uint16_t arg_len)
+{
+    result_t rc;
+
+    rc = usb_sw_len(arg, arg_len);
+    if (rc != RES_OK)
+    {
+        return rc;
+    }
+    drv_spi.pf_stop();
+    return RES_OK;
+}
+
+static result_t usb_i2c_on(const uint8_t *arg, uint16_t arg_len)
+{
+    result_t rc;
+
+    rc = usb_sw_len(arg, arg_len);
+    if (rc != RES_OK)
+    {
+        return rc;
+    }
+    if (s_ota_on != 0u)
+    {
+        return RES_STATE;
+    }
+    return drv_i2c.pf_start();
+}
+
+static result_t usb_i2c_off(const uint8_t *arg, uint16_t arg_len)
+{
+    result_t rc;
+
+    rc = usb_sw_len(arg, arg_len);
+    if (rc != RES_OK)
+    {
+        return rc;
+    }
+    drv_i2c.pf_stop();
+    return RES_OK;
+}
+
+static result_t usb_pwm_on(const uint8_t *arg, uint16_t arg_len)
+{
+    result_t rc;
+
+    rc = usb_sw_len(arg, arg_len);
+    if (rc != RES_OK)
+    {
+        return rc;
+    }
+    if (s_ota_on != 0u)
+    {
+        return RES_STATE;
+    }
+    rc = drv_pwm_out.pf_start();
+    if (rc != RES_OK)
+    {
+        return rc;
+    }
+    return drv_pwm_in.pf_start();
+}
+
+static result_t usb_pwm_off(const uint8_t *arg, uint16_t arg_len)
+{
+    result_t rc;
+
+    rc = usb_sw_len(arg, arg_len);
+    if (rc != RES_OK)
+    {
+        return rc;
+    }
+    drv_pwm_out.pf_stop();
+    drv_pwm_in.pf_stop();
+    return RES_OK;
+}
+
 #if (OTA_FLAG_DBG != 0u)
 static const usb_ctrl_row_t s_ctrl[] =
 {
-    { FRAME_MOD_SYS, FRAME_OP_FLAG_RD,  usb_flag_rd  },
-    { FRAME_MOD_SYS, FRAME_OP_FLAG_WR,  usb_flag_wr  },
-    { FRAME_MOD_SYS, FRAME_OP_FLAG_CLR, usb_flag_clr },
+    { FRAME_MOD_SYS,  FRAME_OP_FLAG_RD,  usb_flag_rd  },
+    { FRAME_MOD_SYS,  FRAME_OP_FLAG_WR,  usb_flag_wr  },
+    { FRAME_MOD_SYS,  FRAME_OP_FLAG_CLR, usb_flag_clr },
+    { FRAME_MOD_UART, FRAME_OP_ON,       usb_uart_on  },
+    { FRAME_MOD_UART, FRAME_OP_OFF,      usb_uart_off },
+    { FRAME_MOD_ADC,  FRAME_OP_ON,       usb_adc_on   },
+    { FRAME_MOD_ADC,  FRAME_OP_OFF,      usb_adc_off  },
+    { FRAME_MOD_SPI,  FRAME_OP_ON,       usb_spi_on   },
+    { FRAME_MOD_SPI,  FRAME_OP_OFF,      usb_spi_off  },
+    { FRAME_MOD_I2C,  FRAME_OP_ON,       usb_i2c_on   },
+    { FRAME_MOD_I2C,  FRAME_OP_OFF,      usb_i2c_off  },
+    { FRAME_MOD_PWM,  FRAME_OP_ON,       usb_pwm_on   },
+    { FRAME_MOD_PWM,  FRAME_OP_OFF,      usb_pwm_off  },
 };
 #else
 static const usb_ctrl_row_t s_ctrl[] =
 {
-    { 0u, 0u, NULL },
+    { FRAME_MOD_UART, FRAME_OP_ON,  usb_uart_on  },
+    { FRAME_MOD_UART, FRAME_OP_OFF, usb_uart_off },
+    { FRAME_MOD_ADC,  FRAME_OP_ON,  usb_adc_on   },
+    { FRAME_MOD_ADC,  FRAME_OP_OFF, usb_adc_off  },
+    { FRAME_MOD_SPI,  FRAME_OP_ON,  usb_spi_on   },
+    { FRAME_MOD_SPI,  FRAME_OP_OFF, usb_spi_off  },
+    { FRAME_MOD_I2C,  FRAME_OP_ON,  usb_i2c_on   },
+    { FRAME_MOD_I2C,  FRAME_OP_OFF, usb_i2c_off  },
+    { FRAME_MOD_PWM,  FRAME_OP_ON,  usb_pwm_on   },
+    { FRAME_MOD_PWM,  FRAME_OP_OFF, usb_pwm_off  },
 };
 #endif
 
@@ -369,7 +569,6 @@ static result_t usb_on_ctrl(uint8_t cmd, const uint8_t *data, uint16_t len)
     return RES_STATE;
 }
 
-static uint8_t s_ota_on;
 static uint32_t s_expect;
 static uint32_t s_page;
 static uint16_t s_fill;
@@ -505,6 +704,7 @@ static result_t usb_on_ota_start(uint8_t cmd, const uint8_t *data, uint16_t len)
         return RES_STATE;
     }
     s_ota_on = 1u;
+    usb_biz_halt();
     s_expect = ota_face_base(target);
     s_page = s_expect;
     s_fill = 0u;
@@ -812,6 +1012,10 @@ static void usb_up_uart(void)
     uint16_t packed;
     uint16_t budget;
 
+    if (s_uart_report == 0u)
+    {
+        return;
+    }
     rb = drv_uart.pf_rx_ring();
     if (rb == NULL)
     {

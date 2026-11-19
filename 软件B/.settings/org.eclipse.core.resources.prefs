@@ -28,3 +28,4 @@ encoding//fw_app/04_Components/ring_buffer/ring_buffer.h=UTF-8
 encoding//fw_app/05_Scheduler/sched/sched.c=UTF-8
 encoding//fw_app/06_App/heartbeat/app_heartbeat.h=UTF-8
 encoding//fw_app/06_App/uart_monitor/app_uart_monitor.c=UTF-8
+encoding//fw_app/06_App/usb_comm/app_usb_comm.c=UTF-8
