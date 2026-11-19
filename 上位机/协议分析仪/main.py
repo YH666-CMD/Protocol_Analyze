@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""协议分析仪上位机。窗口大约和串口助手一样大。平滑和电压换算只在这里做。"""
+"""协议分析仪上位机。平滑和电压换算只在这里做。"""
 
 import os
 import queue
@@ -7,6 +7,7 @@ import struct
 import sys
 import threading
 import tkinter as tk
+from collections import deque
 from tkinter import filedialog, scrolledtext, ttk
 
 try:
@@ -14,10 +15,10 @@ try:
 except ImportError:
     list_ports = None
 
+from adc_scope import AdcScope, sample_us
 from logutil import ChannelLog, app_dir
 from ota_pkg import load_cipher_faces, send_upgrade
-from process.scale import adc_volts
-from process.smooth import ema_step, linear_resample
+from process.smooth import ema_step
 from protocol import (
     BAUD_CODE, CMD_ADC, CMD_CTRL, CMD_I2C, CMD_I2C_CFG, CMD_INFO, CMD_LOG,
     CMD_LOG_RSP, CMD_NACK, CMD_PWM_IN, CMD_PWM_OUT, CMD_SPI, CMD_SPI_CFG,
@@ -28,9 +29,8 @@ from protocol import (
 
 HERE = app_dir()
 LOG_ROOT = os.path.join(HERE, "日志")
-KEEP = 240
+KEEP = 8192
 LOG_READ_MAX = 32
-COLORS = ("#1f77b4", "#d62728", "#2ca02c")
 MODULES = (
     ("串口", MOD_UART, True),
     ("ADC", MOD_ADC, False),
@@ -219,8 +219,8 @@ class Host(object):
         session.next_index += 1
         title = "协议分析仪" if index == 1 else "协议分析仪 - %d" % index
         self.root.title(title)
-        self.root.geometry("780x500")
-        self.root.minsize(720, 460)
+        self.root.geometry("980x680")
+        self.root.minsize(860, 560)
         self.ui = queue.Queue()
         self.ports = []
         self.mod_lab = {}
@@ -228,12 +228,14 @@ class Host(object):
         if others:
             src = others[0]
             self.ema = list(src.ema)
-            self.raw = [list(ch) for ch in src.raw]
-            self.smooth = [list(ch) for ch in src.smooth]
+            self.raw = [deque(ch, maxlen=KEEP) for ch in src.raw]
+            self.smooth = [deque(ch, maxlen=KEEP) for ch in src.smooth]
+            self.adc_dt_us = src.adc_dt_us
         else:
             self.ema = [None, None, None]
-            self.raw = [[], [], []]
-            self.smooth = [[], [], []]
+            self.raw = [deque(maxlen=KEEP) for _ in range(3)]
+            self.smooth = [deque(maxlen=KEEP) for _ in range(3)]
+            self.adc_dt_us = sample_us(3)
         self.show_volt = tk.BooleanVar(value=True)
         self.alpha = tk.DoubleVar(value=0.25)
         self.hex_mode = tk.BooleanVar(value=True)
@@ -281,9 +283,9 @@ class Host(object):
         lab.pack(side=tk.LEFT, padx=(0, 8))
         self.mod_lab[name] = lab
 
-    def _view(self, parent, height=8):
+    def _view(self, parent, height=8, expand=True):
         box = scrolledtext.ScrolledText(parent, height=height, font=("Consolas", 9))
-        box.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        box.pack(fill=tk.BOTH, expand=expand, padx=4, pady=4)
         return box
 
     def _build_uart(self):
@@ -312,9 +314,9 @@ class Host(object):
         ttk.Checkbutton(bar, text="显示伏特（×11）", variable=self.show_volt).pack(side=tk.LEFT, padx=8)
         ttk.Label(bar, text="EMA").pack(side=tk.LEFT)
         ttk.Scale(bar, from_=0.05, to=1.0, variable=self.alpha, length=120).pack(side=tk.LEFT, padx=4)
-        self.canvas = tk.Canvas(page, height=220, bg="white", highlightthickness=1)
-        self.canvas.pack(fill=tk.X, padx=4)
-        self.view_adc = self._view(page, 6)
+        self.scope = AdcScope(page)
+        self.scope.pack(fill=tk.BOTH, expand=True)
+        self.view_adc = self._view(page, 4, expand=False)
 
     def _build_spi(self):
         page = ttk.Frame(self.book)
@@ -808,6 +810,7 @@ class Host(object):
         if nch < 1 or nch > 3:
             self.note("ADC", "通道数 %u 不在 1 到 3" % nch)
             return
+        self.adc_dt_us = sample_us(nch)
         words = struct.unpack_from("<%uH" % ((len(body) - 2) // 2), body, 2)
         alpha = float(self.alpha.get())
         for index, sample in enumerate(words):
@@ -815,32 +818,9 @@ class Host(object):
             self.raw[ch].append(sample)
             self.smooth[ch].append(ema_step(self.ema[ch], sample, alpha))
             self.ema[ch] = self.smooth[ch][-1]
-            if len(self.raw[ch]) > KEEP:
-                del self.raw[ch][0]
-                del self.smooth[ch][0]
 
     def draw_adc(self):
-        canvas = self.canvas
-        canvas.delete("all")
-        width = max(canvas.winfo_width(), 10)
-        height = max(canvas.winfo_height(), 10)
-        for ch in range(3):
-            series = self.smooth[ch]
-            if len(series) < 2:
-                continue
-            if self.show_volt.get():
-                series = [adc_volts(v) for v in series]
-                top = 3.3 * 11
-            else:
-                top = 4095.0
-            points = linear_resample(series, min(width, 400))
-            coords = []
-            for i, value in enumerate(points):
-                x = i * (width - 4) / max(1, len(points) - 1) + 2
-                y = height - 4 - (value / top) * (height - 8)
-                coords.extend((x, y))
-            canvas.create_line(*coords, fill=COLORS[ch], width=1)
-        canvas.create_text(8, 8, anchor="nw", text="蓝 CH0  红 CH1  绿 CH2", fill="#444")
+        self.scope.draw(self.smooth, self.show_volt.get(), self.adc_dt_us)
 
     def show_pwm(self, text):
         self.pwm_info["text"] = text
