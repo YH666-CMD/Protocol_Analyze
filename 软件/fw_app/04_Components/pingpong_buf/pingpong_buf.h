@@ -33,7 +33,7 @@ typedef void     (*pp_unlock_fn)(uint32_t state);
  * 每个样本 2 字节，两个半区一共 240 字节。256 不能满足全部通道数。
  * DMA 用循环模式、半字宽度，个数填 PP_BUF_SIZE（120 个半字）。
  */
-#define PP_HALF_SIZE   120u
+#define PP_HALF_SIZE   60u
 #define PP_BUF_SIZE    (2u * PP_HALF_SIZE)
 #define PP_BUF_BYTES   (PP_BUF_SIZE * 2u)
 

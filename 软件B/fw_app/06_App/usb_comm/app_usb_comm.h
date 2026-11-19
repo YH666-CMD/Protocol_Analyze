@@ -27,6 +27,8 @@
  *      只发这一字节就只改波特率。新波特率在功能码表加一行。
  *   9. SPI 走 FRAME_CMD_SPI_CFG。数据区第 1 字节是模式 0～3，第 2 字节 0 只改模式，
  *      1 表示后面是要发出的字节，一次最多 40 字节。没打开就回状态不对。
+ *  10. ADC 打开后由本任务把半区拆成多条 0x30。数据是校准后的 0～4095，不乘 11。
+ *      一拍发不完就丢掉剩下的，不把串口挤掉。
  */
 #ifndef FW_APP_06_APP_USB_COMM_APP_USB_COMM_H_
 #define FW_APP_06_APP_USB_COMM_APP_USB_COMM_H_

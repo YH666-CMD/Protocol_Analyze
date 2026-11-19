@@ -1146,6 +1146,72 @@ static void usb_up_spi(void)
     }
 }
 
+/*
+ * 半区 60 个样本、3 路，一轮 6 字节。一帧去掉序号和通道数后最多装 9 轮。
+ * 一拍把这一半发完就停，发不出就丢掉剩下的，不占着 USB 不放。
+ */
+static void usb_up_adc(void)
+{
+    pp_sample_t half[PP_HALF_SIZE];
+    uint8_t raw[FRAME_DATA_MAX];
+    uint8_t pkt[FRAME_MAX];
+    uint16_t rounds;
+    uint16_t done;
+    uint16_t room;
+    uint16_t fit;
+    uint16_t r;
+    uint16_t i;
+    uint16_t packed;
+    uint16_t sample;
+    uint8_t nframe;
+    uint8_t ch;
+    static uint8_t s_seq;
+
+    if (!drv_adc.pf_take(half, &rounds) || rounds == 0u)
+    {
+        return;
+    }
+
+    done = 0u;
+    nframe = 0u;
+    while (done < rounds && nframe < 3u)
+    {
+        room = drv_usb.pf_tx_ready();
+        fit = 9u;
+        if ((uint16_t)(rounds - done) < fit)
+        {
+            fit = (uint16_t)(rounds - done);
+        }
+        if (room < (uint16_t)(FRAME_OH + 2u + fit * 6u))
+        {
+            return;
+        }
+
+        raw[0] = s_seq;
+        s_seq++;
+        raw[1] = ADC_CH_NUM;
+        i = 2u;
+        for (r = 0u; r < fit; r++)
+        {
+            for (ch = 0u; ch < ADC_CH_NUM; ch++)
+            {
+                sample = half[(uint16_t)ch * rounds + done + r];
+                raw[i] = (uint8_t)sample;
+                i++;
+                raw[i] = (uint8_t)(sample >> 8);
+                i++;
+            }
+        }
+        if (frame_sw_driver.pf_pack(FRAME_CMD_ADC, raw, i, pkt, (uint16_t)sizeof(pkt), &packed) != RES_OK ||
+            drv_usb.pf_tx(pkt, packed) != RES_OK)
+        {
+            return;
+        }
+        done = (uint16_t)(done + fit);
+        nframe++;
+    }
+}
+
 result_t app_usb_comm_init(void)
 {
 #if (USB_LOG_ENABLE != 0u) && (PRINT_ENABLE != 0u)
@@ -1164,6 +1230,7 @@ result_t app_usb_comm_on_tick(uint32_t now_ms, uint32_t elapsed_ms, uint32_t eve
 
     usb_down();
     usb_up_uart();
+    usb_up_adc();
     usb_up_spi();
     return RES_OK;
 }
