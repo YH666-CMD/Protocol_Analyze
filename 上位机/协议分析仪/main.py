@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 """协议分析仪上位机。平滑和电压换算只在这里做。"""
 
+import math
 import os
 import queue
 import struct
 import sys
+import tempfile
 import threading
 import tkinter as tk
+import zlib
 from collections import deque
 from tkinter import filedialog, scrolledtext, ttk
 
@@ -90,6 +93,100 @@ def i2c_line(body):
     return "收 " + hex_line(body[1:])
 
 
+ICON_RGB = ((229, 57, 53), (67, 160, 71), (30, 136, 229))
+_ICON_IMAGES = []
+_ICON_PATH = ""
+
+
+def icon_pixels(size):
+    """一排三个等大圆，左红中绿右蓝。间隙和左右边距相同，上下居中。"""
+    gap = max(1, size // 16)
+    diam = (size - 4 * gap) // 3
+    spare = size - (diam * 3 + gap * 4)
+    left = gap + spare // 2
+    radius = diam / 2.0
+    cy = size / 2.0
+    buf = bytearray(size * size * 4)
+    for index, color in enumerate(ICON_RGB):
+        cx = left + radius + index * (diam + gap)
+        y0 = max(0, int(cy - radius - 1))
+        y1 = min(size, int(math.ceil(cy + radius + 1)))
+        x0 = max(0, int(cx - radius - 1))
+        x1 = min(size, int(math.ceil(cx + radius + 1)))
+        for y in range(y0, y1):
+            for x in range(x0, x1):
+                dist = math.hypot(x + 0.5 - cx, y + 0.5 - cy)
+                if dist >= radius + 0.5:
+                    continue
+                alpha = 255 if dist <= radius - 0.5 else int(255 * (radius + 0.5 - dist))
+                if alpha <= 0:
+                    continue
+                pos = (y * size + x) * 4
+                buf[pos:pos + 4] = bytes((color[0], color[1], color[2], alpha))
+    return bytes(buf)
+
+
+def _png_chunk(tag, data):
+    crc = zlib.crc32(tag + data) & 0xFFFFFFFF
+    return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", crc)
+
+
+def png_bytes(size, rgba):
+    raw = bytearray()
+    stride = size * 4
+    for y in range(size):
+        raw.append(0)
+        raw.extend(rgba[y * stride:(y + 1) * stride])
+    ihdr = struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0)
+    return b"\x89PNG\r\n\x1a\n" + _png_chunk(b"IHDR", ihdr) + _png_chunk(b"IDAT", zlib.compress(bytes(raw), 9)) + _png_chunk(b"IEND", b"")
+
+
+def ico_bytes(sizes):
+    images = [(size, png_bytes(size, icon_pixels(size))) for size in sizes]
+    header = struct.pack("<HHH", 0, 1, len(images))
+    entries = bytearray()
+    body = bytearray()
+    offset = 6 + 16 * len(images)
+    for size, png in images:
+        dim = 0 if size >= 256 else size
+        entries += struct.pack("<BBBBHHII", dim, dim, 0, 0, 1, 32, len(png), offset)
+        offset += len(png)
+        body += png
+    return header + bytes(entries) + bytes(body)
+
+
+def install_window_icon(root):
+    """换成红绿蓝三个圆。必须在创建 Tk 之后调用，图片要留着引用。"""
+    global _ICON_PATH
+    del _ICON_IMAGES[:]
+    folder = tempfile.gettempdir()
+    _ICON_PATH = os.path.join(folder, "protocol_analyzer_rgb.ico")
+    with open(_ICON_PATH, "wb") as handle:
+        handle.write(ico_bytes((16, 32, 48)))
+    for size in (16, 32, 48):
+        path = os.path.join(folder, "protocol_analyzer_rgb_%d.png" % size)
+        with open(path, "wb") as handle:
+            handle.write(png_bytes(size, icon_pixels(size)))
+        try:
+            _ICON_IMAGES.append(tk.PhotoImage(file=path, master=root))
+        except tk.TclError:
+            pass
+    apply_window_icon(root)
+
+
+def apply_window_icon(win):
+    if _ICON_PATH:
+        try:
+            win.iconbitmap(_ICON_PATH)
+        except tk.TclError:
+            pass
+    if _ICON_IMAGES:
+        try:
+            win.iconphoto(True, *_ICON_IMAGES)
+        except tk.TclError:
+            pass
+
+
 def show_in_taskbar(win):
     """根窗口藏起来之后，每个新窗口仍要单独出现在任务栏。"""
     if sys.platform != "win32":
@@ -106,6 +203,7 @@ def show_in_taskbar(win):
             ctypes.windll.user32.SetWindowLongW(hwnd, -20, style)
             win.withdraw()
             win.deiconify()
+            apply_window_icon(win)
         except Exception:
             pass
 
@@ -219,6 +317,7 @@ class Host(object):
         session.next_index += 1
         title = "协议分析仪" if index == 1 else "协议分析仪 - %d" % index
         self.root.title(title)
+        apply_window_icon(self.root)
         self.root.geometry("980x680")
         self.root.minsize(860, 560)
         self.ui = queue.Queue()
@@ -842,6 +941,7 @@ def main():
             pass
     root = tk.Tk()
     root.withdraw()
+    install_window_icon(root)
     session = Session(root)
     session.open_window()
     root.mainloop()
