@@ -40,6 +40,33 @@ MODULES = (
 )
 
 
+PWM_TIM_HZ = 96000000
+
+
+def pwm_regs(hz, duty):
+    """把频率和占空比换成 TIM1 的 PSC、ARR、CCR。定时器时钟固定 96MHz。"""
+    if hz < 1 or duty < 0 or duty > 100:
+        return None
+    total = PWM_TIM_HZ // hz
+    if total < 2:
+        return None
+    psc_div = (total + 65535) // 65536
+    if psc_div < 1 or psc_div > 65536:
+        return None
+    arr_div = total // psc_div
+    if arr_div < 2:
+        return None
+    if arr_div > 65535:
+        arr_div = 65535
+    if duty == 0:
+        ccr = 0
+    elif duty == 100:
+        ccr = arr_div
+    else:
+        ccr = (arr_div * duty) // 100
+    return psc_div - 1, arr_div - 1, ccr
+
+
 def i2c_line(body):
     if not body:
         return "空帧"
@@ -678,8 +705,17 @@ class Host(object):
         except ValueError:
             self.note("PWM", "频率和占空比要是整数")
             return
-        self.note("PWM", "请求输出 %u Hz，占空 %u%%" % (hz, duty))
-        self.module_send(CMD_PWM_OUT, struct.pack("<HH", hz & 0xFFFF, duty & 0xFFFF), "PWM")
+        if hz < 1 or duty < 0 or duty > 100:
+            self.note("PWM", "频率至少 1Hz，占空比是 0 到 100")
+            return
+        regs = pwm_regs(hz, duty)
+        if regs is None:
+            self.note("PWM", "这个频率配不出来，最高大约 48MHz")
+            return
+        psc, arr, ccr = regs
+        actual = PWM_TIM_HZ // ((psc + 1) * (arr + 1))
+        self.note("PWM", "请求 %u Hz，占空 %u%%，实际约 %u Hz" % (hz, duty, actual))
+        self.module_send(CMD_PWM_OUT, struct.pack("<HHH", psc, arr, ccr), "PWM")
 
     def module_send(self, cmd, data, name):
         if not self.need_open(name):
