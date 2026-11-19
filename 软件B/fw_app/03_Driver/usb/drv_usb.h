@@ -46,6 +46,7 @@ typedef struct
 } usb_cdc_line_t;
 
 typedef void (*usb_rx_fn)(const uint8_t *data, uint16_t len);
+typedef void (*usb_tx_fn)(void);
 
 typedef struct
 {
@@ -83,6 +84,11 @@ typedef struct
      * 返回：RES_OK。回调在中断里执行，返回前必须把字节拷走。
      */
     result_t (*pf_on_rx_set)(usb_rx_fn fn);
+    /*
+     * pf_on_tx_set：上一包已经被主机取走时调用。传 NULL 则不再通知。
+     * 返回：RES_OK。回调在 USB 中断里，可以再交一包，不能等待。
+     */
+    result_t (*pf_on_tx_set)(usb_tx_fn fn);
 } drv_usb_driver_t;
 
 extern const drv_usb_driver_t drv_usb;

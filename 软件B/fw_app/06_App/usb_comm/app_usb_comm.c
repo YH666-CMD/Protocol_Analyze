@@ -1164,67 +1164,72 @@ static void usb_up_spi(void)
 
 /*
  * 半区 60 个样本、3 路，一轮 6 字节。一帧去掉序号和通道数后最多装 9 轮。
- * 一拍把这一半发完就停，发不出就丢掉剩下的，不占着 USB 不放。
+ * 端点同时只能挂一包。这一包交出后就返回，等主机取走再发下一包。
  */
 static void usb_up_adc(void)
 {
-    pp_sample_t half[PP_HALF_SIZE];
+    static pp_sample_t hold[PP_HALF_SIZE];
+    static uint16_t hold_n;
+    static uint16_t hold_done;
+    static uint8_t hold_on;
+    static uint8_t s_seq;
     uint8_t raw[FRAME_DATA_MAX];
     uint8_t pkt[FRAME_MAX];
-    uint16_t rounds;
-    uint16_t done;
     uint16_t room;
     uint16_t fit;
     uint16_t r;
     uint16_t i;
     uint16_t packed;
     uint16_t sample;
-    uint8_t nframe;
     uint8_t ch;
-    static uint8_t s_seq;
+    uint8_t guard;
 
-    if (!drv_adc.pf_take(half, &rounds) || rounds == 0u)
+    for (guard = 0u; guard < 12u; guard++)
     {
-        return;
-    }
-
-    done = 0u;
-    nframe = 0u;
-    while (done < rounds && nframe < 3u)
-    {
-        room = drv_usb.pf_tx_ready();
-        fit = 9u;
-        if ((uint16_t)(rounds - done) < fit)
+        if (hold_on == 0u)
         {
-            fit = (uint16_t)(rounds - done);
-        }
-        if (room < (uint16_t)(FRAME_OH + 2u + fit * 6u))
-        {
-            return;
-        }
-
-        raw[0] = s_seq;
-        s_seq++;
-        raw[1] = ADC_CH_NUM;
-        i = 2u;
-        for (r = 0u; r < fit; r++)
-        {
-            for (ch = 0u; ch < ADC_CH_NUM; ch++)
+            if (!drv_adc.pf_take(hold, &hold_n) || hold_n == 0u)
             {
-                sample = half[(uint16_t)ch * rounds + done + r];
-                raw[i] = (uint8_t)sample;
-                i++;
-                raw[i] = (uint8_t)(sample >> 8);
-                i++;
+                return;
             }
+            hold_done = 0u;
+            hold_on = 1u;
         }
-        if (frame_sw_driver.pf_pack(FRAME_CMD_ADC, raw, i, pkt, (uint16_t)sizeof(pkt), &packed) != RES_OK ||
-            drv_usb.pf_tx(pkt, packed) != RES_OK)
+        while (hold_done < hold_n)
         {
-            return;
+            room = drv_usb.pf_tx_ready();
+            fit = 9u;
+            if ((uint16_t)(hold_n - hold_done) < fit)
+            {
+                fit = (uint16_t)(hold_n - hold_done);
+            }
+            if (room < (uint16_t)(FRAME_OH + 2u + fit * 6u))
+            {
+                return;
+            }
+            raw[0] = s_seq;
+            s_seq++;
+            raw[1] = ADC_CH_NUM;
+            i = 2u;
+            for (r = 0u; r < fit; r++)
+            {
+                for (ch = 0u; ch < ADC_CH_NUM; ch++)
+                {
+                    sample = hold[(uint16_t)ch * hold_n + hold_done + r];
+                    raw[i] = (uint8_t)sample;
+                    i++;
+                    raw[i] = (uint8_t)(sample >> 8);
+                    i++;
+                }
+            }
+            if (frame_sw_driver.pf_pack(FRAME_CMD_ADC, raw, i, pkt, (uint16_t)sizeof(pkt), &packed) != RES_OK ||
+                drv_usb.pf_tx(pkt, packed) != RES_OK)
+            {
+                return;
+            }
+            hold_done = (uint16_t)(hold_done + fit);
         }
-        done = (uint16_t)(done + fit);
-        nframe++;
+        hold_on = 0u;
     }
 }
 
@@ -1273,6 +1278,47 @@ static void usb_up_i2c(void)
     }
 }
 
+/*
+ * 端点 3 空出来就交下一包。10 毫秒任务负责发出第一包，主机取走后由中断接着交。
+ * 正在组包时又被通知，就补一次，避免这一包空档要再等 10 毫秒。
+ */
+static volatile uint8_t s_up_busy;
+static volatile uint8_t s_up_again;
+
+static void usb_up_kick(void)
+{
+    uint8_t pass;
+
+    NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn);
+    if (s_up_busy != 0u)
+    {
+        s_up_again = 1u;
+        NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
+        return;
+    }
+    s_up_busy = 1u;
+    NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
+
+    for (pass = 0u; pass < 2u; pass++)
+    {
+        s_up_again = 0u;
+        usb_up_uart();
+        usb_up_adc();
+        usb_up_spi();
+        usb_up_i2c();
+        usb_up_pwm();
+        NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn);
+        if (s_up_again == 0u)
+        {
+            s_up_busy = 0u;
+            NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
+            return;
+        }
+        NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
+    }
+    s_up_busy = 0u;
+}
+
 result_t app_usb_comm_init(void)
 {
 #if (USB_LOG_ENABLE != 0u) && (PRINT_ENABLE != 0u)
@@ -1280,6 +1326,7 @@ result_t app_usb_comm_init(void)
 #endif
     rb_sw_driver.pf_rb_init(&s_usb_rx);
     (void)drv_usb.pf_on_rx_set(usb_on_rx);
+    (void)drv_usb.pf_on_tx_set(usb_up_kick);
     return drv_usb.pf_init();
 }
 
@@ -1292,10 +1339,6 @@ result_t app_usb_comm_on_tick(uint32_t now_ms, uint32_t elapsed_ms, uint32_t eve
     usb_down();
     drv_i2c.pf_poll();
     drv_pwm_in.pf_poll();
-    usb_up_uart();
-    usb_up_adc();
-    usb_up_spi();
-    usb_up_i2c();
-    usb_up_pwm();
+    usb_up_kick();
     return RES_OK;
 }

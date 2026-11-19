@@ -40,7 +40,7 @@ static volatile uint8_t s_got;
 static uint8_t s_hit[I2C_HIT_MAX];
 static uint8_t s_hit_n;
 static uint8_t s_rep[1u + I2C_IO_MAX];
-static uint8_t s_rep_n;
+static volatile uint8_t s_rep_n;
 
 static void i2c_bus_release(void)
 {
@@ -185,6 +185,7 @@ static void i2c_queue_rep(uint8_t tag, const uint8_t *src, uint8_t n)
     {
         s_rep[1u + i] = src[i];
     }
+    __asm__ volatile("" ::: "memory");
     s_rep_n = (uint8_t)(1u + n);
 }
 

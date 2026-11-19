@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """协议分析仪上位机。平滑和电压换算只在这里做。"""
 
+import json
 import math
 import os
 import queue
@@ -8,6 +9,7 @@ import struct
 import sys
 import tempfile
 import threading
+import time
 import tkinter as tk
 import zlib
 from collections import deque
@@ -33,6 +35,25 @@ from protocol import (
 HERE = app_dir()
 LOG_ROOT = os.path.join(HERE, "日志")
 KEEP = 8192
+
+
+def _dbg(hypothesis, message, data):
+    # #region agent log
+    try:
+        path = os.path.abspath(os.path.join(HERE, "..", "..", "debug-436657.log"))
+        line = json.dumps({
+            "sessionId": "436657",
+            "hypothesisId": hypothesis,
+            "location": "main.py",
+            "message": message,
+            "data": data,
+            "timestamp": int(time.time() * 1000),
+        }, ensure_ascii=False)
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(line + "\n")
+    except Exception:
+        pass
+    # #endregion
 LOG_READ_MAX = 32
 MODULES = (
     ("串口", MOD_UART, True),
@@ -224,6 +245,11 @@ class Session(object):
         for name, _mod, default in MODULES:
             self.want[name] = default
         self.pwm_text = ""
+        self._adc_dbg = {
+            "t": None, "n": 0, "frames": 0, "rounds": 0,
+            "seq_gap": 0, "seq_dup": 0, "jump": 0, "near": 0,
+            "hi": 0, "lo": 0, "last_seq": None, "last_ch0": None, "lens": {},
+        }
         self.logs = {}
         for name in ("串口", "ADC", "SPI", "I2C", "PWM", "升级", "日志"):
             self.logs[name] = ChannelLog(os.path.join(LOG_ROOT, name), name)
@@ -263,12 +289,76 @@ class Session(object):
                 win.status["text"] = "连接中断"
         self.root.after(80, self.pump)
 
+    def _adc_note(self, body):
+        # #region agent log
+        st = self._adc_dbg
+        if st["n"] >= 8:
+            return
+        now = time.time()
+        if st["t"] is None:
+            st["t"] = now
+        st["frames"] += 1
+        ln = len(body)
+        st["lens"][str(ln)] = st["lens"].get(str(ln), 0) + 1
+        nch = body[1] if len(body) >= 2 else 0
+        if len(body) >= 4 and nch in (1, 2, 3) and ((len(body) - 2) % 2) == 0:
+            words = struct.unpack_from("<%uH" % ((len(body) - 2) // 2), body, 2)
+            ch0 = words[0::nch]
+            st["rounds"] += len(ch0)
+            for value in ch0:
+                if value > 255:
+                    st["hi"] += 1
+                else:
+                    st["lo"] += 1
+            seq = body[0]
+            if st["last_seq"] is not None:
+                delta = (seq - st["last_seq"]) & 0xFF
+                if delta == 0:
+                    st["seq_dup"] += 1
+                elif delta != 1:
+                    st["seq_gap"] += 1
+            st["last_seq"] = seq
+            if ch0 and st["last_ch0"] is not None:
+                if abs(int(ch0[0]) - int(st["last_ch0"])) > 400:
+                    st["jump"] += 1
+                else:
+                    st["near"] += 1
+            if ch0:
+                st["last_ch0"] = ch0[-1]
+        if now - st["t"] >= 1.0:
+            elapsed = now - st["t"]
+            _dbg("A-E", "adc pace", {
+                "frames_per_s": round(st["frames"] / elapsed, 1),
+                "ch0_per_s": round(st["rounds"] / elapsed, 1),
+                "expect_ch0_per_s": 15873,
+                "seq_gap": st["seq_gap"],
+                "seq_dup": st["seq_dup"],
+                "jump": st["jump"],
+                "near": st["near"],
+                "sample_hi": st["hi"],
+                "sample_lo": st["lo"],
+                "lens": st["lens"],
+            })
+            st["n"] += 1
+            st["t"] = now
+            st["frames"] = 0
+            st["rounds"] = 0
+            st["seq_gap"] = 0
+            st["seq_dup"] = 0
+            st["jump"] = 0
+            st["near"] = 0
+            st["hi"] = 0
+            st["lo"] = 0
+            st["lens"] = {}
+        # #endregion
+
     def on_frame(self, frame):
         kind = frame[2]
         body = frame[3:-2]
         if kind == CMD_UART_RX:
             self.broadcast("串口", "收 %s" % hex_line(body))
         elif kind == CMD_ADC:
+            self._adc_note(body)
             self.logs["ADC"].write("原始 " + hex_line(body))
             for win in list(self.windows):
                 win.take_adc(body)

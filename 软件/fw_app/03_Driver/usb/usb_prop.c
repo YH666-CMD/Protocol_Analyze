@@ -17,10 +17,10 @@
 #include "hw_config.h"
 #include "drv_usb.h"
 
-extern uint8_t USBD_Endp3_Busy;
+extern volatile uint8_t USBD_Endp3_Busy;
 
-/* 默认 115200 8N1。波特率小端。主机没下发之前读到的就是这组。 */
-static uint8_t s_line[7] =
+/* 默认 115200 8N1。波特率小端。主机没下发之前读到的就是这组。中断写入，任务读取。 */
+static volatile uint8_t s_line[7] =
 {
     0x00, 0xC2, 0x01, 0x00,
     0x00,
@@ -28,7 +28,8 @@ static uint8_t s_line[7] =
     0x08
 };
 
-static usb_rx_fn s_rx_hook;
+static volatile usb_rx_fn s_rx_hook;
+static void (*volatile s_tx_hook)(void);
 
 DEVICE Device_Table =
 {
@@ -107,6 +108,16 @@ void usb_rx_hook_set(usb_rx_fn fn)
 usb_rx_fn usb_rx_hook_get(void)
 {
     return s_rx_hook;
+}
+
+void usb_tx_hook_set(void (*fn)(void))
+{
+    s_tx_hook = fn;
+}
+
+void (*usb_tx_hook_get(void))(void)
+{
+    return s_tx_hook;
 }
 
 /*
@@ -280,7 +291,7 @@ static uint8_t *usb_line_copy(uint16_t Length)
         pInformation->Ctrl_Info.Usb_wLength = 7u;
         return NULL;
     }
-    return s_line;
+    return (uint8_t *)s_line;
 }
 
 RESULT USBD_Data_Setup(uint8_t RequestNo)

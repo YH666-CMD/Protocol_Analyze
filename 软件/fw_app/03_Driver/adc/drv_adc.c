@@ -8,7 +8,7 @@
  * 采样时间用 239.5 个 ADC 时钟，和官方例程一样，不再缩短。
  * ADC 时钟是 PCLK2 的 8 分频。96MHz 时大约 12MHz。
  * 校准按本芯片 D6 的做法：采 10 次，取中间一段再合成偏移。
- * 半区没取走又来新的，由乒乓缓冲计次，这里不阻塞。
+ * 半区在 DMA 中断里拷进队列。USB 任务 10 毫秒来取，不再只留最新一块。
  */
 #if (DMA_ID_ADC1 != 1u)
 #error "ADC DMA must stay on DMA1 channel 1"
@@ -25,10 +25,18 @@
 #define ADC_SMP_2395     7u
 #define ADC_CAL_SPIN     2000u
 #define ADC_TRIG_SW      0x000E0000u
+#define ADC_Q_SLOTS      10u
 
-static uint8_t s_on;
+static volatile uint8_t s_on;
 static int16_t s_cal;
 static pp_t s_pp;
+static uint16_t s_q[ADC_Q_SLOTS][PP_HALF_SIZE];
+static volatile uint8_t s_q_w;
+static volatile uint8_t s_q_r;
+static volatile uint8_t s_q_n;
+static volatile uint32_t s_q_drop;
+
+static void adc_q_clear(void);
 
 static uint32_t adc_irq_lock(void)
 {
@@ -242,11 +250,13 @@ static result_t adc_start(void)
         return RES_OVERRUN;
     }
 
+    adc_q_clear();
+    s_q_drop = 0u;
+    s_on = 1u;
     adc_dma_arm();
     ADC1->CTLR2 |= ADC_DMA;
     NVIC_EnableIRQ(DMA1_Channel1_IRQn);
     ADC1->CTLR2 |= ADC_EXTTRIG | ADC_SWSTART;
-    s_on = 1u;
     return RES_OK;
 }
 
@@ -267,32 +277,92 @@ static void adc_stop(void)
     adc_pins_idle();
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, DISABLE);
     s_on = 0u;
+    adc_q_clear();
+}
+
+static void adc_q_clear(void)
+{
+    uint32_t state;
+
+    state = adc_irq_lock();
+    s_q_w = 0u;
+    s_q_r = 0u;
+    s_q_n = 0u;
+    adc_irq_unlock(state);
+}
+
+/* 只在 DMA 中断里调用。队列满就丢掉最旧的一块。 */
+static void adc_q_push(const uint16_t *src)
+{
+    uint8_t slot;
+    uint16_t i;
+
+    if (s_on == 0u || src == NULL)
+    {
+        return;
+    }
+    if (s_q_n >= ADC_Q_SLOTS)
+    {
+        s_q_r = (uint8_t)((s_q_r + 1u) % ADC_Q_SLOTS);
+        s_q_n--;
+        if (s_q_drop < 0xFFFFFFFFu)
+        {
+            s_q_drop++;
+        }
+    }
+    slot = s_q_w;
+    for (i = 0u; i < PP_HALF_SIZE; i++)
+    {
+        s_q[slot][i] = src[i];
+    }
+    s_q_w = (uint8_t)((slot + 1u) % ADC_Q_SLOTS);
+    s_q_n++;
 }
 
 static bool adc_take(pp_sample_t *out, uint16_t *rounds)
 {
+    uint32_t state;
+    uint16_t raw[PP_HALF_SIZE];
+    uint16_t per_ch;
     uint16_t n;
     uint16_t i;
+    uint8_t ch;
+    uint8_t slot;
 
     if (rounds != NULL)
     {
         *rounds = 0u;
     }
-    if (s_on == 0u || out == NULL)
+    if (out == NULL)
     {
         return false;
     }
-    if (!pp_sw_driver.pf_pp_get(&s_pp, ADC_CH_NUM, out, &n))
+    state = adc_irq_lock();
+    if (s_on == 0u || s_q_n == 0u)
     {
+        adc_irq_unlock(state);
         return false;
     }
+    slot = s_q_r;
     for (i = 0u; i < PP_HALF_SIZE; i++)
     {
-        out[i] = adc_apply(out[i]);
+        raw[i] = s_q[slot][i];
+    }
+    s_q_r = (uint8_t)((slot + 1u) % ADC_Q_SLOTS);
+    s_q_n--;
+    adc_irq_unlock(state);
+
+    per_ch = (uint16_t)(PP_HALF_SIZE / ADC_CH_NUM);
+    for (n = 0u; n < per_ch; n++)
+    {
+        for (ch = 0u; ch < ADC_CH_NUM; ch++)
+        {
+            out[(uint16_t)ch * per_ch + n] = adc_apply(raw[n * ADC_CH_NUM + ch]);
+        }
     }
     if (rounds != NULL)
     {
-        *rounds = n;
+        *rounds = per_ch;
     }
     return true;
 }
@@ -307,12 +377,12 @@ void DMA1_Channel1_IRQHandler(void)
     if ((flags & DMA_HTIF1) != 0u)
     {
         DMA1->INTFCR = DMA_CHTIF1;
-        pp_sw_driver.pf_pp_irq_half(&s_pp);
+        adc_q_push(s_pp.buf);
     }
     if ((flags & DMA_TCIF1) != 0u)
     {
         DMA1->INTFCR = DMA_CTCIF1;
-        pp_sw_driver.pf_pp_irq_full(&s_pp);
+        adc_q_push(&s_pp.buf[PP_HALF_SIZE]);
     }
 }
 

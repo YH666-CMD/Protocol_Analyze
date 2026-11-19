@@ -56,4 +56,8 @@ void usb_cdc_line_get(uint8_t out[7]);
 void usb_rx_hook_set(void (*fn)(const uint8_t *data, uint16_t len));
 void (*usb_rx_hook_get(void))(const uint8_t *data, uint16_t len);
 
+/* 端点 3 的一包被主机取走后调用。fn 为 NULL 则不通知。回调里可以再交一包，不能等待。 */
+void usb_tx_hook_set(void (*fn)(void));
+void (*usb_tx_hook_get(void))(void);
+
 #endif /* FW_APP_03_DRIVER_USB_USB_PROP_H_ */

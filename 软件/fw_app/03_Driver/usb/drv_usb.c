@@ -240,6 +240,12 @@ static result_t usb_on_rx_set(usb_rx_fn fn)
     return RES_OK;
 }
 
+static result_t usb_on_tx_set(usb_tx_fn fn)
+{
+    usb_tx_hook_set(fn);
+    return RES_OK;
+}
+
 const drv_usb_driver_t drv_usb =
 {
     .pf_init      = usb_init,
@@ -248,6 +254,7 @@ const drv_usb_driver_t drv_usb =
     .pf_tx        = usb_tx,
     .pf_tx_ready  = usb_tx_ready,
     .pf_on_rx_set = usb_on_rx_set,
+    .pf_on_tx_set = usb_on_tx_set,
 };
 
 void drv_usb_detach(void)

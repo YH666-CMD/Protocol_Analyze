@@ -16,7 +16,7 @@
 #include "usb_log.h"
 #include "drv_usb.h"
 
-uint8_t USBD_Endp3_Busy;
+volatile uint8_t USBD_Endp3_Busy;
 
 /* 端点 1 是中断 IN，用来向主机报串口状态。现在没有状态要报，函数体留空。符号必须在，原厂表会调用它。 */
 void EP1_IN_Callback(void)
@@ -45,10 +45,17 @@ void EP2_OUT_Callback(void)
     SetEPRxValid(ENDP2);
 }
 
-/* 端点 3 的一包已经被主机取走。清掉忙标志，上层才能交下一包。 */
+/* 端点 3 的一包已经被主机取走。清掉忙标志，再通知上层交下一包。 */
 void EP3_IN_Callback(void)
 {
+    void (*hook)(void);
+
     USBD_Endp3_Busy = 0u;
+    hook = usb_tx_hook_get();
+    if (hook != NULL)
+    {
+        hook();
+    }
 }
 
 uint16_t usb_ep3_room(void)
