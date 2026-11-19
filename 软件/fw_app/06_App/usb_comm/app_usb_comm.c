@@ -1228,6 +1228,27 @@ static void usb_up_adc(void)
     }
 }
 
+static void usb_up_pwm(void)
+{
+    uint8_t raw[8];
+    uint8_t pkt[16];
+    uint16_t packed;
+
+    if (drv_usb.pf_tx_ready() < (uint16_t)(FRAME_OH + 8u))
+    {
+        return;
+    }
+    if (!drv_pwm_in.pf_take(raw))
+    {
+        return;
+    }
+    if (frame_sw_driver.pf_pack(FRAME_CMD_PWM_IN, raw, 8u, pkt, (uint16_t)sizeof(pkt), &packed) != RES_OK ||
+        drv_usb.pf_tx(pkt, packed) != RES_OK)
+    {
+        return;
+    }
+}
+
 static void usb_up_i2c(void)
 {
     uint8_t raw[FRAME_DATA_MAX];
@@ -1270,9 +1291,11 @@ result_t app_usb_comm_on_tick(uint32_t now_ms, uint32_t elapsed_ms, uint32_t eve
 
     usb_down();
     drv_i2c.pf_poll();
+    drv_pwm_in.pf_poll();
     usb_up_uart();
     usb_up_adc();
     usb_up_spi();
     usb_up_i2c();
+    usb_up_pwm();
     return RES_OK;
 }

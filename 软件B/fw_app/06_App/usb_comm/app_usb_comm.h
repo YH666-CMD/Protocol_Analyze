@@ -32,6 +32,7 @@
  *  11. I2C 走 FRAME_CMD_I2C_CFG。主机不拉通知脚。读取长度由上位机给出。
  *      脚仍为低时，任务里再读同样的长度。从机没发完不拉高。
  *  12. PWM 输出走 FRAME_CMD_PWM_OUT。数据是上位机算好的 PSC、ARR、CCR，各 2 字节。
+ *  13. PWM 输入打开后由本任务读 TIM2。0x20 是周期和高电平，单位微秒。没变化不发。
  */
 #ifndef FW_APP_06_APP_USB_COMM_APP_USB_COMM_H_
 #define FW_APP_06_APP_USB_COMM_APP_USB_COMM_H_

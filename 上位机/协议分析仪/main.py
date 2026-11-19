@@ -16,7 +16,7 @@ except ImportError:
 
 from logutil import ChannelLog, app_dir
 from ota_pkg import load_cipher_faces, send_upgrade
-from process.scale import adc_volts, pwm_real
+from process.scale import adc_volts
 from process.smooth import ema_step, linear_resample
 from protocol import (
     BAUD_CODE, CMD_ADC, CMD_CTRL, CMD_I2C, CMD_I2C_CFG, CMD_INFO, CMD_LOG,
@@ -67,6 +67,19 @@ def pwm_regs(hz, duty):
     return psc_div - 1, arr_div - 1, ccr
 
 
+def pwm_text(body):
+    """周期和高电平是微秒。只给界面一行字。"""
+    if len(body) < 8:
+        return None
+    period, high = struct.unpack_from("<II", body, 0)
+    if period == 0:
+        return "输入：无信号"
+    duty = (high * 100) // period
+    if duty > 100:
+        duty = 100
+    return "输入：%u Hz，占空 %u%%" % (1000000 // period, duty)
+
+
 def i2c_line(body):
     if not body:
         return "空帧"
@@ -112,6 +125,7 @@ class Session(object):
         self.want = {}
         for name, _mod, default in MODULES:
             self.want[name] = default
+        self.pwm_text = ""
         self.logs = {}
         for name in ("串口", "ADC", "SPI", "I2C", "PWM", "升级", "日志"):
             self.logs[name] = ChannelLog(os.path.join(LOG_ROOT, name), name)
@@ -165,8 +179,13 @@ class Session(object):
         elif kind == CMD_I2C:
             self.broadcast("I2C", i2c_line(body))
         elif kind == CMD_PWM_IN:
-            if self.windows:
-                self.windows[0].take_pwm(body)
+            text = pwm_text(body)
+            if text is None or text == self.pwm_text:
+                return
+            self.pwm_text = text
+            self.broadcast("PWM", text)
+            for win in list(self.windows):
+                win.show_pwm(text)
         else:
             self.broadcast("升级", "旁路帧 " + hex_line(frame))
 
@@ -357,6 +376,10 @@ class Host(object):
         self.pwm_duty.insert(0, "50")
         self.pwm_duty.pack(side=tk.LEFT, padx=4)
         ttk.Button(bar, text="输出", command=self.pwm_out).pack(side=tk.LEFT)
+        self.pwm_info = ttk.Label(page, text="输入：还没有")
+        self.pwm_info.pack(anchor="w", padx=4)
+        if self.session.pwm_text:
+            self.pwm_info["text"] = self.session.pwm_text
         self.view_pwm = self._view(page, 16)
 
     def _build_ota(self):
@@ -819,13 +842,8 @@ class Host(object):
             canvas.create_line(*coords, fill=COLORS[ch], width=1)
         canvas.create_text(8, 8, anchor="nw", text="蓝 CH0  红 CH1  绿 CH2", fill="#444")
 
-    def take_pwm(self, body):
-        if len(body) < 8:
-            self.note("PWM", "输入 " + hex_line(body))
-            return
-        period, high = struct.unpack_from("<II", body, 0)
-        self.note("PWM", "原始周期 %u 高电平 %u；显示 ×11 后 %g / %g" % (
-            period, high, pwm_real(period), pwm_real(high)))
+    def show_pwm(self, text):
+        self.pwm_info["text"] = text
 
     def on_close(self):
         if self in self.session.windows:
